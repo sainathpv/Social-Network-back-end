@@ -9,7 +9,7 @@ const qrcode = require('qrcode');
 const check2auth = require('../middleware/check-2auth');
 
 // this is the sign up page
-router.post("/signup", (req, res, next) => {
+router.post("/signup",  (req, res, next) => {
     // first of all find if the user exist
     User.find({email: req.body.email})
     .exec()
@@ -23,8 +23,7 @@ router.post("/signup", (req, res, next) => {
             });
         } else {
             // if the user does not exist, hash the current user's password 
-            console.log("test 1");
-    
+
             // create user using the input information and hashed username
             const user = new User({
                 _id: new mongoose.Types.ObjectId(),
@@ -43,8 +42,19 @@ router.post("/signup", (req, res, next) => {
                 const MFAOptions = {
                     issuer: 'Hoosier Connection',
                     user: req.body.email,
-                    length: 64}
+                    length: 64
+                }
                 const secret = speakEasy.generateSecret(MFAOptions);
+                
+                const token = jwt.sign({
+                    name: user.name,
+                    email: user.email,
+                    twofactor: false
+                },
+               
+                process.env.JWT_KEY,{
+                    expiresIn:'1h'
+                });
 
                 // update the user that is just created:
                 User.update({email: req.body.email}, {
@@ -53,7 +63,10 @@ router.post("/signup", (req, res, next) => {
                     result => {
                         console.log(result);
                         qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
-                            res.status(200).json(data_url);
+                            res.status(200).json({
+                                img: data_url,
+                                token:  token
+                            });
                         });
                     })
                     //if anything wrong, throws an error
@@ -99,9 +112,10 @@ router.post('/login', (req, res, next) => {
 
             const token = jwt.sign({
                 name: user.name,
-                email: user.email
+                email: user.email,
+                twofactor: false
             },
-
+           
             process.env.JWT_KEY,{
                 expiresIn:'1h'
             });

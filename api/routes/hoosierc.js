@@ -36,8 +36,6 @@ const postUpload = multer({
 });
 
 
-
-
 router.get("/", (req, res, next) => {
     Post.find()
     .select("firstname lastname password userPostImage email")

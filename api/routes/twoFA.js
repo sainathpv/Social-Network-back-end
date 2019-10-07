@@ -6,8 +6,8 @@ const speakEasy = require('speakeasy');
 const checkAuth = require('../middleware/check-auth');
 
 // for login, after varified user's secret, we ask user for the 6 letter token on their phone
-router.post('/twoFALogin', checkAuth, (req, res, next) => {
-    User.find({email: req.params.email})
+router.post('/twoFALogin', checkAuth,  (req, res, next) => {
+    User.find({email: req.body.email})
     .exec()
     .then(user => {
 
@@ -19,8 +19,8 @@ router.post('/twoFALogin', checkAuth, (req, res, next) => {
             token: req.body.token,
             window:1
         });
-
-        if(verified){ //generate JWT token if 2FA is successful
+        
+        if(!verified){ //generate JWT token if 2FA is successful
             const token = jwt.sign({
                 name: user.name,
                 email: user.email,
