@@ -37,9 +37,6 @@ app.use((req, res, next) => {
 const profileRoutes = require("./api/routes/profiles");
 app.use("/profiles", profileRoutes);
 
-const orderRoutes = require("./api/routes/order");
-app.use("/order", orderRoutes);
-
 const userRoutes = require('./api/routes/users');
 app.use("/users", userRoutes);
 
