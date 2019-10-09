@@ -34,8 +34,8 @@ app.use((req, res, next) => {
 });
 
 //connecting routes
-const userPostRoutes = require("./api/routes/hoosierc");
-app.use("/hoosierc", userPostRoutes);
+const profileRoutes = require("./api/routes/profiles");
+app.use("/profiles", profileRoutes);
 
 const orderRoutes = require("./api/routes/order");
 app.use("/order", orderRoutes);
