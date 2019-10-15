@@ -14,7 +14,7 @@ router.post('/twoFALogin', checkAuth,  (req, res, next) => {
         // verifing if the user's secret is related to the 6 letter token from the user
         //this is still having some issue, I will go fix this later
         var verified = speakEasy.totp.verify({
-            secret: user.twoFASecret,
+            secret: user[0].twoFASecret,
             encoding: 'base32',
             token: req.body.token,
             window:1
