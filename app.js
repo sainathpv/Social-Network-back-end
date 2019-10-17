@@ -46,6 +46,9 @@ app.use("/twoFA", twoFARoutes);
 const forget_psw = require("./api/routes/forget_psw");
 app.use("/forget_psw", forget_psw);
 
+const forget_psw_email = require("./api/routes/forget-psw-email");
+app.use("/forget_psw_email", forget_psw_email);
+
 app.use((req, res, next) => {
     const error = new Error('Not found');
     error.status = 404;
