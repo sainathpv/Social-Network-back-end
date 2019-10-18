@@ -3,6 +3,7 @@ const app = express();
 const morgan = require("morgan");
 const bodyParser = require("body-parser")
 const mongoose = require('mongoose')
+const flash=require("connect-flash");
 
 // mongodb connection
 mongoose.connect(
@@ -46,8 +47,10 @@ app.use("/twoFA", twoFARoutes);
 const forget_psw = require("./api/routes/forget_psw");
 app.use("/forget_psw", forget_psw);
 
-const forget_psw_email = require("./api/routes/forget-psw-email");
+const forget_psw_email = require("./api/routes/forget_psw_email");
 app.use("/forget_psw_email", forget_psw_email);
+
+app.use(flash());
 
 app.use((req, res, next) => {
     const error = new Error('Not found');
@@ -59,7 +62,8 @@ app.use((error, req, res, next) => {
     res.status(error.status || 500)
     res.json({
         error: {
-            message: error.message
+            message: error.message,
+            messagetwo: "page not find maybe"
         }
     });
 });

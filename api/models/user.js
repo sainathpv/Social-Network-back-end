@@ -18,7 +18,9 @@ const userSchema = mongoose.Schema({
     // this will be a string and only gets updated by the twoFA.js (could be issue tho because people can actually update this from users.js when they sign up)
     twoFASecret: {
         type: String
-    }
+    },
+    resetPswToken: {type: String},
+    resetPswExpires: {type: Date}
 });
 
 
