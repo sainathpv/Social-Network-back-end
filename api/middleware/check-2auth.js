@@ -6,9 +6,9 @@ module.exports = (req, res, next) => {
         console.log(token);
         console.log(process.env.JWT_KEY);
         const decoded = jwt.verify(token, process.env.JWT_KEY);
-        
-        req.userData = decoded;
-        if(req.userData.twofactor){
+             
+        if(decoded.twofactor){
+            req.userData = decoded;
             next();
         }else{
             res.status(401).json({

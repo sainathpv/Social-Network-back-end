@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
+const Profile = require("../models/profile");
 const jwt = require('jsonwebtoken');
 const speakEasy = require('speakeasy');
 const checkAuth = require('../middleware/check-auth');
@@ -21,20 +22,28 @@ router.post('/twoFALogin', checkAuth,  (req, res, next) => {
         });
         
         if(verified){ //generate JWT token if 2FA is successful
-            const token = jwt.sign({
-                name: user.name,
-                email: user.email,
-                twoFactor: true
-            },
-            process.env.JWT_KEY,
-            {
-                expiresIn:'1h'
-            });
+
+            Profile.findOne({userid: user._id}) //fetch the profile of the user
+            .exec()
+            .then(profile => {
+
+                const token = jwt.sign({
+                    name: user.name,
+                    email: user.email,
+                    twoFactor: true, 
+                    profileid: profile._id //send the profile ID of the user inside the token
+                },
+                process.env.JWT_KEY,
+                {
+                    expiresIn:'1h'
+                });
     
-            res.status(200).json({
-                Authentication: "Successful",
-                JWTToken: token
+                res.status(200).json({
+                    Authentication: "Successful",
+                    JWTToken: token
+                });
             });
+
         }
 
         //if anything goes wrong, return an error
@@ -45,6 +54,6 @@ router.post('/twoFALogin', checkAuth,  (req, res, next) => {
         }
 
         });
-    })
+    });
 
 module.exports = router;

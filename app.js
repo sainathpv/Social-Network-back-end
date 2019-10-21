@@ -3,7 +3,7 @@ const app = express();
 const morgan = require("morgan");
 const bodyParser = require("body-parser")
 const mongoose = require('mongoose')
-const flash=require("connect-flash");
+const flash = require("connect-flash");
 
 // mongodb connection
 mongoose.connect(

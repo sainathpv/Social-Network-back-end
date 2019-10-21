@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require('mongoose');
 const User = require("../models/user");
+const Profile = require("../models/profile");
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 const speakEasy = require('speakeasy');
@@ -58,10 +59,20 @@ router.post("/signup",  (req, res, next) => {
 
                 // update the user that is just created:
                 User.update({email: req.body.email}, {
-                $set: {"twoFASecret" : secret.base32}}).exec().then(
+                $set: {"twoFASecret" : secret.base32}})
+                .exec()
+                .then(
                     // then return the qrcode for user to scan, Ben should be able to convert the data_url to a image in front end
                     result => {
                         console.log(result);
+
+                        const profile = new Profile({
+                            _id: new mongoose.Types.ObjectId(),
+                            userid: result._id
+                        });
+
+                        profile.save();
+                        
                         qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
                             res.status(200).json({
                                 img: data_url,
@@ -70,9 +81,9 @@ router.post("/signup",  (req, res, next) => {
                         });
                     })
                     //if anything wrong, throws an error
-                    .catch(err => {
-                    console.log(err);
-                    res.status(500).json({error: err});
+                .catch(err => {
+                console.log(err);
+                res.status(500).json({error: err});
                 });
             })
             // originaly this will end here, but now it should redirect to twoFA route,
@@ -101,13 +112,13 @@ router.post('/login', (req, res, next) => {
         // if there are no user, or if the user has multiple users, return an error
         if (user.length < 1 || user.length >= 2){
             return res.status(401).json({
-                mesage: "Auth Failed"
+                message: "Auth Failed"
             });
         }
+        // compare the password entered by the user with the pwd stored in database
         var result = bcrypt.compareSync(req.body.password, user[0].password);
-        // compare the user password with the mongodb's password
         console.log(result);
-        // if matches, redirect to the 2-auth page
+        // if the password is correct, redirect to the 2-auth page
         if (result){
 
             const token = jwt.sign({
@@ -121,15 +132,15 @@ router.post('/login', (req, res, next) => {
             });
 
             return res.status(200).json({
-                meesage: "Logged In",
+                message: "Logged In",
                 token: token
             });
         }
         // if anything wrong, returns an error
         return res.status(401).json({
-            meesage: "Auth Failed"
+            message: "Auth Failed"
         });
-    })
+    });
 });
 
 //this is the delete user if anything gets wrong
