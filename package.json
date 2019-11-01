@@ -1,13 +1,13 @@
 {
   "name": "hoosier_connection",
   "version": "1.0.0",
-  "description": "A post based social network that can solve student's question",
+  "description": "A social network for students, created at Indiana University",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon"
   },
-  "author": "Xiao Xiong",
+  "author": "Sainath Parakala",
   "license": "ISC",
   "dependencies": {
     "async": "^3.1.0",

@@ -18,7 +18,6 @@ mongoose.connect(
 mongoose.Promise = global.Promise;
 
 app.use(morgan('dev'));
-app.use('/postUploads', express.static('postUploads'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use((req, res, next) => {
@@ -28,17 +27,19 @@ app.use((req, res, next) => {
     'Origin, X-Requested-With, Content-Type, Accept, Authorization'
   );
   if (req.method == 'OPTIONS') {
-    res.header('Access-Control-Arrow-Methods', 'PUT, POST, PATCH, DELET');
+    res.header('Access-Control-Arrow-Methods', 'PUT, POST, PATCH, DELETE');
     return res.status(200).json({});
   }
   next();
 });
 
 //connecting routes
+app.use('/assets', express.static('./staticAssets'));
+
 const profileRoutes = require('./api/routes/profiles');
 app.use('/profiles', profileRoutes);
 
-const userRoutes = require('./api/routes/users');
+const userRoutes = require('./api/routes/newusers');
 app.use('/users', userRoutes);
 
 const twoFARoutes = require('./api/routes/twoFA');
