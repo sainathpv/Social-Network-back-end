@@ -1,50 +1,58 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const User = require("../models/user");
+const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const speakEasy = require('speakeasy');
 const checkAuth = require('../middleware/check-auth');
 
 // for login, after varified user's secret, we ask user for the 6 letter token on their phone
-router.post('/twoFALogin', checkAuth,  (req, res, next) => {
-    User.find({email: req.body.email})
-    .exec()
-    .then(user => {
+router.post('/twoFALogin', checkAuth, async (req, res, next) => {
+  try {
+    const email = req.userData.email;
+    const otp = req.body.otp;
+    const user = await User.findOne({ email }).exec();
 
-        // verifing if the user's secret is related to the 6 letter token from the user
-        //this is still having some issue, I will go fix this later
-        var verified = speakEasy.totp.verify({
-            secret: user.twoFASecret,
-            encoding: 'base32',
-            token: req.body.token,
-            window:1
-        });
-        
-        if(!verified){ //generate JWT token if 2FA is successful
-            const token = jwt.sign({
-                name: user.name,
-                email: user.email,
-                twoFactor: true
-            },
-            process.env.JWT_KEY,
-            {
-                expiresIn:'1h'
-            });
-    
-            res.status(200).json({
-                Authentication: "Successful",
-                JWTToken: token
-            });
-        }
+    // verifing if the user's secret is related to the 6 letter token from the user
+    //this is still having some issue, I will go fix this later
+    var verified = speakEasy.totp.verify({
+      secret: user.twoFASecret,
+      encoding: 'base32',
+      token: otp,
+      window: 1
+    });
 
-        //if anything goes wrong, return an error
-        else{
-            res.status(401).json({
-                Authentication: "Failed"
-            });
-        }
+    console.log(verified);
 
-        });
-    })
+    if (!verified) {
+      return res.status(401).json({
+        Authentication: 'Failed'
+      });
+    }
+
+    const { firstName, lastName, profileId } = user;
+
+    const jwtToken = jwt.sign(
+      {
+        name: firstName + ' ' + lastName,
+        email,
+        twoFactor: true,
+        profileId //sending the profile ID of the user inside the JWT token
+      },
+      process.env.JWT_KEY,
+      {
+        expiresIn: '7d'
+      }
+    );
+
+    return res.status(200).json({
+      Authentication: 'Successful',
+      JWTToken: jwtToken
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Server error'
+    });
+  }
+});
 
 module.exports = router;
