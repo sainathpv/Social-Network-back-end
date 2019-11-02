@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const speakEasy = require('speakeasy');
 const qrcode = require('qrcode');
 const check2auth = require('../middleware/check-2auth');
+const fetch = require("node-fetch");
 
 // this is the sign up page
 router.post("/signup",  (req, res, next) => {
@@ -94,36 +95,73 @@ router.post("/signup",  (req, res, next) => {
 
 // this is the post for login
 router.post('/login', (req, res, next) => {
+    
     // check if the user exist. 
-    User.find({email: req.body.email})
+    User.findOne({email: req.body.email})
     .exec()
     .then(user => {
+        /*
+        var options = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                secret : "6LeACsAUAAAAADabygLnhkLCdTP8GAhaW49l-RW8", 
+                response : req.body.captcha, 
+            }),
+        };
+        console.log(options.body)
+        fetch("https://www.google.com/recaptcha/api/siteverify", options).then( result =>{
+            if(result.status === 200){
+                return result.json();
+            }else{
+                console.log(result);
+                return null;
+            }
+        }).then( result => {
+            if(result === null){
+
+            }else{
+                console.log(result);
+                return null
+                /*
+                //add cookie
+                var date = new Date();
+                date = new Date(date.getTime() + (60*60*1000));
+                Cookie.setCookie('HC_JWT', result.token, date); 
+                //redirect to 2factor
+                this.setState({twofactor: true});
+            }
+        });*/
+        console.log(req.body)
         // if there are no user, or if the user has multiple users, return an error
-        if (user.length < 1 || user.length >= 2){
-            return res.status(401).json({
-                mesage: "Auth Failed"
-            });
-        }
-        var result = bcrypt.compareSync(req.body.password, user[0].password);
+        var result = bcrypt.compareSync(req.body.password, user.password);
         // compare the user password with the mongodb's password
         console.log(result);
         // if matches, redirect to the 2-auth page
         if (result){
+            if (req.body.captcha !== ""){
 
-            const token = jwt.sign({
-                name: user.name,
-                email: user.email,
-                twofactor: false
-            },
-           
-            process.env.JWT_KEY,{
-                expiresIn:'1h'
-            });
+                const token = jwt.sign({
+                    name: user.name,
+                    email: user.email,
+                    twofactor: false
+                },
+            
+                process.env.JWT_KEY,{
+                    expiresIn:'1h'
+                });
 
-            return res.status(200).json({
-                meesage: "Logged In",
-                token: token
-            });
+                return res.status(200).json({
+                    meesage: "Logged In",
+                    token: token
+                });
+            } else {
+                return res.status(409).json({
+                    message: "Captcha not verified"
+                })
+            }
         }
         // if anything wrong, returns an error
         return res.status(401).json({
@@ -131,6 +169,7 @@ router.post('/login', (req, res, next) => {
         });
     })
 });
+
 
 //this is the delete user if anything gets wrong
 router.delete('/delete',  (req, res, next) => {
