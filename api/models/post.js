@@ -6,19 +6,14 @@ const postSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         require: true,
-        unique: true
     },
-    commentID: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Comment", 
-        unique: true
-    }],
     numLikes: Number, 
     numDislikes: Number,
-    tags: {type: Array,},
+    tags: String,
     title: {type: String, require: true},
-    content: {type: Mixed, require: true},
-
+    content: {type: String, require: true},
+    images: String, 
+    videos: String,
 });
 
 

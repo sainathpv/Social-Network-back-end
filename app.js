@@ -51,6 +51,12 @@ app.use('/forget_psw', forget_psw);
 const forget_psw_email = require('./api/routes/forget_psw_email');
 app.use('/forget_psw_email', forget_psw_email);
 
+const postRoutes = require("./api/routes/posts");
+app.use('/posts', postRoutes);
+
+const commentsRoutes = require("./api/routes/comments");
+app.use('/comments', commentsRoutes);
+
 app.use(flash());
 
 app.use((req, res, next) => {

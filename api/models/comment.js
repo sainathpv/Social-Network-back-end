@@ -6,11 +6,17 @@ const commentSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         require: true,
-        unique: true
+    },
+    postID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Post',
+        require: true,
     },
     numLikes: Number, 
     numDislikes: Number,
-    content: {type: Mixed, require: true},
+    content: {type: String, require: true},
+    images: String, 
+    videos: String
 
 });
 
