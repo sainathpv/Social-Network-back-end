@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const ProfileSchema = mongoose.Schema({
+  _id: mongoose.Schema.Types.ObjectId,
   profileImageUrl: {
     type: String,
     default: '/assets/images/profiles/default.jpg'

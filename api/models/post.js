@@ -2,16 +2,16 @@ const mongoose = require('mongoose');
 
 const postSchema = mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
-    userID: {
+    profileId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        require: true,
+        ref: 'Profile',
+        required: true,
     },
     numLikes: Number, 
     numDislikes: Number,
     tags: String,
-    title: {type: String, require: true},
-    content: {type: String, require: true},
+    title: {type: String, required: true},
+    content: {type: String, required: true},
     images: String, 
     videos: String,
 });

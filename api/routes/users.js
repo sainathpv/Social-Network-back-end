@@ -100,40 +100,6 @@ router.post('/login', (req, res, next) => {
     User.findOne({email: req.body.email})
     .exec()
     .then(user => {
-        /*
-        var options = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                secret : "6LeACsAUAAAAADabygLnhkLCdTP8GAhaW49l-RW8", 
-                response : req.body.captcha, 
-            }),
-        };
-        console.log(options.body)
-        fetch("https://www.google.com/recaptcha/api/siteverify", options).then( result =>{
-            if(result.status === 200){
-                return result.json();
-            }else{
-                console.log(result);
-                return null;
-            }
-        }).then( result => {
-            if(result === null){
-
-            }else{
-                console.log(result);
-                return null
-                /*
-                //add cookie
-                var date = new Date();
-                date = new Date(date.getTime() + (60*60*1000));
-                Cookie.setCookie('HC_JWT', result.token, date); 
-                //redirect to 2factor
-                this.setState({twofactor: true});
-            }
-        });*/
         console.log(req.body)
         // if there are no user, or if the user has multiple users, return an error
         var result = bcrypt.compareSync(req.body.password, user.password);

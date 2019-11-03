@@ -8,9 +8,11 @@ const checkAuth = require('../middleware/check-auth');
 // for login, after varified user's secret, we ask user for the 6 letter token on their phone
 router.post('/twoFALogin', checkAuth, async (req, res, next) => {
   try {
+    console.log(req.body.otp);
     const email = req.userData.email;
     const otp = req.body.otp;
-    const user = await User.findOne({ email }).exec();
+    const user = await User.findOne({email: email}).exec();
+    console.log(user);
 
     // verifing if the user's secret is related to the 6 letter token from the user
     //this is still having some issue, I will go fix this later

@@ -48,7 +48,7 @@ router.post('/postPosts', upload.single('postImg'),
     try {
       const post = new Post({
         _id: new mongoose.Types.ObjectId(),
-        userID: req.body.userID, //this req can be changed due to the front end requirement
+        profileId: req.body.profileId, //this req can be changed due to the front end requirement
         commentID: [],
         numLikes: 0,
         numDislikes: 0,

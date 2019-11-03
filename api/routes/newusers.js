@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const speakEasy = require('speakeasy');
 const qrcode = require('qrcode');
+const mongoose = require('mongoose');
 
 router.post('/signup', async (req, res, next) => {
   try {
@@ -35,11 +36,16 @@ router.post('/signup', async (req, res, next) => {
 
     const secret = speakEasy.generateSecret(MFAOptions);
 
-    const profile = new Profile();
+    const profile = new Profile({
+      _id: new mongoose.Types.ObjectId(),
+    }
+
+    );
     const profileResult = await profile.save();
 
     // create a new user with the input information and hashed passsword
     const user = new User({
+      _id: new mongoose.Types.ObjectId(),
       firstName,
       lastName,
       email,
@@ -48,8 +54,12 @@ router.post('/signup', async (req, res, next) => {
       profileId: profileResult._id
     });
 
+    
+
     //Asynchronously save the user to the database
     user.save();
+
+    console.log(user)
 
     //generate a jwt token before proceeding to 2FA auth
     const token = jwt.sign(
@@ -81,11 +91,11 @@ router.post('/signup', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
   try {
     // check if the user exists.
-    const { email, password } = req.body;
+    const { email, password, captcha} = req.body;
     const user = await User.findOne({ email }).exec();
 
     // if there is no user, return an error message
-    if (!user) {
+    if (!user || captcha == "") {
       return res.status(401).json({
         message: 'Auth Failed'
       });
