@@ -5,8 +5,8 @@ module.exports = (req, res, next) => {
     const jwtToken = req.headers.authorization.split(' ')[1];
     //console.log(jwtToken);
     //console.log(process.env.JWT_KEY);
+    //console.log(jwtToken);
     const decoded = jwt.verify(jwtToken, process.env.JWT_KEY);
-    //console.log(decoded);
 
     if (decoded.twoFactor) {
       req.userData = decoded;

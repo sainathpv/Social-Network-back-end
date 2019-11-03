@@ -42,6 +42,12 @@ app.use('/profiles', profileRoutes);
 const userRoutes = require('./api/routes/newusers');
 app.use('/users', userRoutes);
 
+const postRoutes = require("./api/routes/posts");
+app.use('/posts', postRoutes);
+
+const commentsRoutes = require("./api/routes/comments");
+app.use('/comments', commentsRoutes);
+
 const twoFARoutes = require('./api/routes/twoFA');
 app.use('/twoFA', twoFARoutes);
 
@@ -64,7 +70,7 @@ app.use((error, req, res, next) => {
   res.json({
     error: {
       message: error.message,
-      messagetwo: 'page not find maybe'
+      messagetwo: 'not found'
     }
   });
 });

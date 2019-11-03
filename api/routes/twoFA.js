@@ -9,9 +9,10 @@ const checkAuth = require('../middleware/check-auth');
 router.post('/twoFALogin', checkAuth, async (req, res, next) => {
   try {
     const email = req.userData.email;
-    const otp = req.body.otp;
+    const otp = req.body.token;
     const user = await User.findOne({ email }).exec();
 
+    console.log(user);
     // verifing if the user's secret is related to the 6 letter token from the user
     //this is still having some issue, I will go fix this later
     var verified = speakEasy.totp.verify({
@@ -20,8 +21,6 @@ router.post('/twoFALogin', checkAuth, async (req, res, next) => {
       token: otp,
       window: 1
     });
-
-    console.log(verified);
 
     if (!verified) {
       return res.status(401).json({
@@ -33,7 +32,7 @@ router.post('/twoFALogin', checkAuth, async (req, res, next) => {
 
     const jwtToken = jwt.sign(
       {
-        name: firstName + ' ' + lastName,
+        userID: user._id,
         email,
         twoFactor: true,
         profileId //sending the profile ID of the user inside the JWT token
@@ -46,7 +45,7 @@ router.post('/twoFALogin', checkAuth, async (req, res, next) => {
 
     return res.status(200).json({
       Authentication: 'Successful',
-      JWTToken: jwtToken
+      token: jwtToken
     });
   } catch (error) {
     res.status(500).json({

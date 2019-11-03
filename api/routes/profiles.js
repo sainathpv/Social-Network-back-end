@@ -32,11 +32,7 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-router.post(
-  '/editprofile',
-  check2Auth,
-  upload.single('profilePicture'),
-  async (req, res, next) => {
+router.post('/editprofile', check2Auth, upload.single('profilePicture'), async (req, res, next) => {
     try {
       const objForUpdate = {};
       const { bio, interests, major } = req.body;
@@ -51,17 +47,18 @@ router.post(
       }
 
       const profile = await Profile.updateOne(
-        { _id: req.userData.profileId },
+        { user: req.userData.userid },
         {
           $set: {
             ...objForUpdate
           }
         }
       );
-      console.log(profile);
+      
       res.status(201).json({
         ...objForUpdate
       });
+      
     } catch (error) {
       console.log(error);
       res.status(500).json({
@@ -75,10 +72,10 @@ router.get('/profile/', check2Auth, async (req, res, next) => {
   try {
     const profile = await Profile.findOne(
       {
-        _id: req.userData.profileId
-      },
-      'profileImageUrl friends bio interests major'
+        user: req.userData.userID
+      }
     ).exec();
+    
     if (!profile) {
       return res.status(400).json({
         message: 'profile not found'
