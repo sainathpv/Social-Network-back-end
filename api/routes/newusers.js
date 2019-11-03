@@ -15,13 +15,12 @@ router.post('/signup', async (req, res, next) => {
     const priorUser = await User.findOne({ email }).exec();
 
     // if a user is found, return an error message
-
     if (priorUser) {
       return res.status(409).json({
         message: 'this email has already been registered'
       });
     }
-
+ 
     // if the user does not exist, hash the new user's password
 
     const salt = bcrypt.genSaltSync(10);
@@ -36,26 +35,23 @@ router.post('/signup', async (req, res, next) => {
 
     const secret = speakEasy.generateSecret(MFAOptions);
 
-    const profile = new Profile({
-      _id: new mongoose.Types.ObjectId(),
-    }
-
-    );
-    const profileResult = await profile.save();
-
     // create a new user with the input information and hashed passsword
     const user = new User({
       _id: new mongoose.Types.ObjectId(),
-      firstName,
-      lastName,
-      email,
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
       password: hash,
-      twoFASecret: secret.base32,
-      profileId: profileResult._id
+      twoFASecret: secret.base32
     });
 
-    
+    const profile = new Profile({
+      _id: new mongoose.Types.ObjectId(),
+      user: user._id,
+      name: user.firstName + " " + user.lastName,
+    });
 
+    profile.save();
     //Asynchronously save the user to the database
     user.save();
 
@@ -64,8 +60,8 @@ router.post('/signup', async (req, res, next) => {
     //generate a jwt token before proceeding to 2FA auth
     const token = jwt.sign(
       {
-        name: `${firstName} ${lastName}`,
-        email,
+        userid: user._id,
+        email: email,
         twofactor: false
       },
       process.env.JWT_KEY,
@@ -75,13 +71,13 @@ router.post('/signup', async (req, res, next) => {
     );
 
     // then return the qrcode for user to scan, Ben should be able to convert the data_url to a image in front end
-
     const data_url = await qrcode.toDataURL(secret.otpauth_url);
 
     res.status(200).json({
       data_url,
       token
     });
+
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err });
@@ -90,6 +86,7 @@ router.post('/signup', async (req, res, next) => {
 
 router.post('/login', async (req, res, next) => {
   try {
+  
     // check if the user exists.
     const { email, password, captcha} = req.body;
     const user = await User.findOne({ email }).exec();
@@ -101,7 +98,6 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
-    console.log(user);
     // compare the password entered by the user with the pwd stored in database
     var isPasswordValid = bcrypt.compareSync(password, user.password);
 
@@ -112,9 +108,8 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        name: user.name,
+    const token = jwt.sign({
+        _id: user._id,
         email: user.email,
         twofactor: false
       },
@@ -137,5 +132,3 @@ router.post('/login', async (req, res, next) => {
 });
 
 module.exports = router;
-
-//await Profile.findOneByIdAndUpdate('_sidfgajfgaef',req.body.interests);

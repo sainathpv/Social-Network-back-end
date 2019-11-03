@@ -6,11 +6,11 @@ const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 const speakEasy = require('speakeasy');
 const qrcode = require('qrcode');
-const check2auth = require('../middleware/check-2auth');
-const fetch = require("node-fetch");
+
 
 // this is the sign up page
 router.post("/signup",  (req, res, next) => {
+    console.log("TESTING: \n \n " + req.body.name);
     // first of all find if the user exist
     User.find({email: req.body.email})
     .exec()
@@ -18,6 +18,7 @@ router.post("/signup",  (req, res, next) => {
         // if user exist before, return an error saying that the user is in mongodb already
         const salt = bcrypt.genSaltSync(10);
         const hash =  bcrypt.hashSync(req.body.password, salt);
+        
         if (user.length >= 1){
             return res.status(409).json({
                 message: "this email has already been registered"
@@ -34,7 +35,7 @@ router.post("/signup",  (req, res, next) => {
                 //userImage: req.file.path,
                 email: req.body.email
             });
-
+            
             // store the current user to the mongodb
             user
             .save()
@@ -80,8 +81,8 @@ router.post("/signup",  (req, res, next) => {
             // I believe for now this will be front end's work (Good Luck!! Thanks for the works!! We could not do it without you)
             // if something wrong, shows an error
             .catch(err => {
-                console.log(err)
-                res.status(500).json({error: err})
+                console.log(err);
+                res.status(500).json({error: err});
             });
 
         }

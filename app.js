@@ -70,7 +70,7 @@ app.use((error, req, res, next) => {
   res.json({
     error: {
       message: error.message,
-      messagetwo: 'page not find maybe'
+      messagetwo: 'not found'
     }
   });
 });

@@ -8,12 +8,12 @@ const postSchema = mongoose.Schema({
         required: true,
     },
     numLikes: Number, 
+    name: {type: String, require: true},
     numDislikes: Number,
-    tags: String,
-    title: {type: String, required: true},
-    content: {type: String, required: true},
-    images: String, 
-    videos: String,
+    tags: {type: Array, require: true},
+    title: {type: String, require: true},
+    type: {type: String, require: true},
+    content: {type: String, require: true}
 });
 
 
