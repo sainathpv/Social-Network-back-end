@@ -132,6 +132,4 @@ router.get("/getComments", async (req, res, next) => {
 
 })
 
-
-
 module.exports = router;
