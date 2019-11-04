@@ -35,6 +35,7 @@ router.post('/signup', async (req, res, next) => {
 
     const secret = speakEasy.generateSecret(MFAOptions);
 
+
     // create a new user with the input information and hashed passsword
     const user = new User({
       _id: new mongoose.Types.ObjectId(),
@@ -54,8 +55,6 @@ router.post('/signup', async (req, res, next) => {
     profile.save();
     //Asynchronously save the user to the database
     user.save();
-
-    console.log(user)
 
     //generate a jwt token before proceeding to 2FA auth
     const token = jwt.sign(
@@ -88,11 +87,11 @@ router.post('/login', async (req, res, next) => {
   try {
   
     // check if the user exists.
-    const { email, password, captcha} = req.body;
+    const { email, password } = req.body;
     const user = await User.findOne({ email }).exec();
 
     // if there is no user, return an error message
-    if (!user || captcha == "") {
+    if (!user) {
       return res.status(401).json({
         message: 'Auth Failed'
       });
@@ -132,3 +131,5 @@ router.post('/login', async (req, res, next) => {
 });
 
 module.exports = router;
+
+//await Profile.findOneByIdAndUpdate('_sidfgajfgaef',req.body.interests);

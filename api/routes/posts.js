@@ -3,8 +3,8 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const Post = require('../models/post');
-const Comment = require('../models/comment')
 const mongoose = require('mongoose');
+const Comment = require('../models/comment')
 const check2Auth = require('../middleware/check-2auth');
 const fs = require("fs")
 
@@ -57,7 +57,8 @@ async (req, res, next) => {
 
     const post = new Post({
       _id: new mongoose.Types.ObjectId(),
-      profileId: req.body.profileId,
+      profileID: req.body.profileID, 
+      comments: [],
       numLikes: 0,
       name: req.body.name,
       numDislikes: 0,
@@ -127,8 +128,23 @@ router.get('/getPosts', async (req, res, next) => {
   }
 });
 
-router.get("/getComments", async (req, res, next) => {
+router.post("/postComment", async (req, res, next) => {
+  Post.findById(req.body.postID).exec().then(post => {
+    post.comments.push({
+      comment: req.body.comment,
+      user: req.body.user,
+      profile: req.body.profile
+    });
+    post.save().catch(err => {
+      console.log(err);
+      res.status(500).json({error: err})
+    });
+    return res.status(200);
+  }).catch(err => {
+    console.log(err);
+    res.status(500).json({error: err})
+  });
+});
 
-})
 
 module.exports = router;
