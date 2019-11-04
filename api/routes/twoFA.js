@@ -8,12 +8,12 @@ const checkAuth = require('../middleware/check-auth');
 // for login, after varified user's secret, we ask user for the 6 letter token on their phone
 router.post('/twoFALogin', checkAuth, async (req, res, next) => {
   try {
-    
     const email = req.userData.email;
     const otp = req.body.token;
     const user = await User.findOne({ email }).exec();
-    
-    console.log(user)
+
+    console.log(otp)
+    console.log(req.body.token)
     // verifing if the user's secret is related to the 6 letter token from the user
     //this is still having some issue, I will go fix this later
     var verified = speakEasy.totp.verify({
@@ -23,16 +23,11 @@ router.post('/twoFALogin', checkAuth, async (req, res, next) => {
       window: 1
     });
 
-    
-
     if (!verified) {
-      
       return res.status(401).json({
         Authentication: 'Failed'
       });
     }
-
-    
 
     const { firstName, lastName, profileId } = user;
 

@@ -2,14 +2,15 @@ const mongoose = require('mongoose');
 
 const postSchema = mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
-    profileId: {
+    profileID: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Profile',
-        required: true,
+        require: true,
     },
     numLikes: Number, 
     name: {type: String, require: true},
     numDislikes: Number,
+    comments: {type: Array, default: []},
     tags: {type: Array, require: true},
     title: {type: String, require: true},
     type: {type: String, require: true},

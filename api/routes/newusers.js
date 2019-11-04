@@ -15,7 +15,7 @@ router.post('/signup', async (req, res, next) => {
     const priorUser = await User.findOne({ email }).exec();
 
     // if a user is found, return an error message
-    if (priorUser) {
+    if (priorUser){
       return res.status(409).json({
         message: 'this email has already been registered'
       });
@@ -34,6 +34,7 @@ router.post('/signup', async (req, res, next) => {
     };
 
     const secret = speakEasy.generateSecret(MFAOptions);
+
 
     // create a new user with the input information and hashed passsword
     const user = new User({
@@ -54,8 +55,6 @@ router.post('/signup', async (req, res, next) => {
     profile.save();
     //Asynchronously save the user to the database
     user.save();
-
-    console.log(user)
 
     //generate a jwt token before proceeding to 2FA auth
     const token = jwt.sign(
@@ -86,13 +85,11 @@ router.post('/signup', async (req, res, next) => {
 
 router.post('/login', async (req, res, next) => {
   try {
-  
     // check if the user exists.
     const { email, password, captcha} = req.body;
     const user = await User.findOne({ email }).exec();
-
     // if there is no user, return an error message
-    if (!user || captcha == "") {
+    if (!user  || captcha == "") {
       return res.status(401).json({
         message: 'Auth Failed'
       });
@@ -132,3 +129,5 @@ router.post('/login', async (req, res, next) => {
 });
 
 module.exports = router;
+
+//await Profile.findOneByIdAndUpdate('_sidfgajfgaef',req.body.interests);
