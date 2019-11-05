@@ -15,12 +15,41 @@ router.post('/signup', async (req, res, next) => {
     const priorUser = await User.findOne({ email }).exec();
 
     // if a user is found, return an error message
-    if (priorUser){
+    if (priorUser) {
+      if (priorUser.authorization === true) {
+        return res.status(409).json({
+          message: 'This email has already been registered'
+        });
+      } else {
+        console.log(priorUser._id)
+        User.remove({ _id: priorUser._id })
+          .exec()
+          .then(result => {
+            console.log(result);
+          })
+          .catch(err => {
+            console.log(err);
+            return res.status(500).json({ error: err })
+          });
+
+        Profile.remove({ user: priorUser._id })
+          .exec()
+          .then(result => {
+            console.log(result);
+          })
+          .catch(err => {
+            console.log(err);
+            return res.status(500).json({ error: err })
+          });
+      }
+    }
+
+    if (password.length < 6) {
       return res.status(409).json({
-        message: 'this email has already been registered'
+        message: 'Password needs to have at least 6 characters'
       });
     }
- 
+
     // if the user does not exist, hash the new user's password
 
     const salt = bcrypt.genSaltSync(10);
@@ -35,6 +64,7 @@ router.post('/signup', async (req, res, next) => {
 
     const secret = speakEasy.generateSecret(MFAOptions);
 
+    console.log("it works here")
 
     // create a new user with the input information and hashed passsword
     const user = new User({
@@ -43,7 +73,8 @@ router.post('/signup', async (req, res, next) => {
       lastName: lastName,
       email: email,
       password: hash,
-      twoFASecret: secret.base32
+      twoFASecret: secret.base32,
+      authorization: false
     });
 
     const profile = new Profile({
@@ -52,9 +83,14 @@ router.post('/signup', async (req, res, next) => {
       name: user.firstName + " " + user.lastName,
     });
 
-    profile.save();
     //Asynchronously save the user to the database
-    user.save();
+    user.save().then().catch(err => {
+      return res.status(409).json({
+        message: 'Your email format is not valid'
+      });
+    });
+
+    profile.save();
 
     //generate a jwt token before proceeding to 2FA auth
     const token = jwt.sign(
@@ -72,7 +108,7 @@ router.post('/signup', async (req, res, next) => {
     // then return the qrcode for user to scan, Ben should be able to convert the data_url to a image in front end
     const data_url = await qrcode.toDataURL(secret.otpauth_url);
 
-    res.status(200).json({
+    return res.status(200).json({
       data_url,
       token
     });
@@ -86,12 +122,12 @@ router.post('/signup', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
   try {
     // check if the user exists.
-    const { email, password, captcha} = req.body;
+    const { email, password, captcha } = req.body;
     const user = await User.findOne({ email }).exec();
     // if there is no user, return an error message
-    if (!user  || captcha == "") {
+    if (!user) {
       return res.status(401).json({
-        message: 'Auth Failed'
+        message: 'Your input email is not correct!'
       });
     }
 
@@ -101,15 +137,22 @@ router.post('/login', async (req, res, next) => {
     if (!isPasswordValid) {
       //return an error if password is incorrect
       return res.status(401).json({
-        message: 'Auth Failed'
+        message: 'Your input password is not correct!'
       });
     }
 
+    if (captcha == "") {
+      return res.status(401).json({
+        message: 'Please click the captcha button!!'
+      });
+    }
+
+
     const token = jwt.sign({
-        _id: user._id,
-        email: user.email,
-        twofactor: false
-      },
+      _id: user._id,
+      email: user.email,
+      twofactor: false
+    },
 
       process.env.JWT_KEY,
       {
@@ -126,6 +169,36 @@ router.post('/login', async (req, res, next) => {
       message: 'Server Error'
     });
   }
+});
+
+
+router.delete('/deleteUser', (req, res, next) => {
+  // remove the user according to userID (_id in mongodb)
+  User.remove({ _id: req.body.userID })
+    .exec()
+    .then(result => {
+      res.status(200).json({
+        message: "User deleted"
+      })
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ error: err })
+    });
+
+
+  Profile.remove({ user: req.body.userID })
+    .exec()
+    .then(result => {
+      res.status(200).json({
+        message: "Profile deleted"
+      })
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ error: err })
+    });
+
 });
 
 module.exports = router;

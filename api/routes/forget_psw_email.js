@@ -18,8 +18,8 @@ router.post("/forget_psw_email",  (req, res, next) => {
             .exec()
             .then(user => {
                 // if user does not exist, shows an error
-                if (user.length >=2 | user.length <= 0) {
-                    return res.status(409).json({
+                if ( !user || user.length >=2 ) {
+                    return res.status(401).json({
                         message: "The input email is invalid"
                     })
                 }
@@ -54,7 +54,7 @@ router.post("/forget_psw_email",  (req, res, next) => {
                 subject: 'HoosierConnection Password Reset',
                 text:   'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
                         'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
-                        'http://' + req.headers.host + '/forget_psw/' + token + '\n\n' +
+                        'http://' + "localhost:3000" + '/ResetPassword/' + token + '\n\n' +
                         'If you did not request this, please ignore this email and your password will remain unchanged.\n'
                     };
             smtpTransport.sendMail(mailOptions, function(err) {

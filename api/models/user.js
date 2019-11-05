@@ -20,7 +20,8 @@ const userSchema = mongoose.Schema({
   },
 
   resetPswToken: { type: String },
-  resetPswExpires: { type: Date }
+  resetPswExpires: { type: Date },
+  authorization: {type: Boolean, required: true}
 });
 
 module.exports = mongoose.model('User', userSchema);

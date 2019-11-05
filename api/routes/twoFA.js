@@ -14,6 +14,7 @@ router.post('/twoFALogin', checkAuth, async (req, res, next) => {
 
     console.log(otp)
     console.log(req.body.token)
+    console.log(email)
     // verifing if the user's secret is related to the 6 letter token from the user
     //this is still having some issue, I will go fix this later
     var verified = speakEasy.totp.verify({
@@ -25,9 +26,11 @@ router.post('/twoFALogin', checkAuth, async (req, res, next) => {
 
     if (!verified) {
       return res.status(401).json({
-        Authentication: 'Failed'
+        message: 'The Code you entered is not valid'
       });
     }
+
+    user.authorization = true; 
 
     const { firstName, lastName, profileId } = user;
 
@@ -43,6 +46,14 @@ router.post('/twoFALogin', checkAuth, async (req, res, next) => {
         expiresIn: '7d'
       }
     );
+
+    user.save().then(result =>{
+      console.log(result)
+    }).catch(err => {
+      return res.status(401).json({
+        message: "something is wrong when changing the authorization",
+      });
+    })
 
     return res.status(200).json({
       Authentication: 'Successful',
