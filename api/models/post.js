@@ -14,6 +14,7 @@ const postSchema = mongoose.Schema({
     tags: {type: Array, require: true},
     title: {type: String, require: true},
     type: {type: String, require: true},
+    votes: {type: Array, default: [] }, //{profileID: id, vote: -1/0/1 }
     content: {type: String, require: true}
 });
 

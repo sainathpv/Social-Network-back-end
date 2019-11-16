@@ -51,11 +51,11 @@ app.use('/comments', commentsRoutes);
 const twoFARoutes = require('./api/routes/twoFA');
 app.use('/twoFA', twoFARoutes);
 
-const forget_psw = require('./api/routes/forgot_psw');
-app.use('/forget_psw', forget_psw);
+const forgot_psw = require('./api/routes/forgot_psw');
+app.use('/forgot_psw', forgot_psw);
 
-const forget_psw_email = require('./api/routes/forgot_psw_email');
-app.use('/forget_psw_email', forget_psw_email);
+const forgot_psw_email = require('./api/routes/forgot_psw_email');
+app.use('/forgot_psw_email', forgot_psw_email);
 
 
 app.use(flash());

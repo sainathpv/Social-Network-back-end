@@ -1,5 +1,6 @@
 const Post = require('../models/post');
 const mongoose = require('mongoose');
+const Profile = require('../models/profile');
 
 exports.posts_post = async (req, res, next) => {
     try {
@@ -84,6 +85,57 @@ exports.posts_get = async (req, res, next) => {
     }
 }
 
+exports.posts_vote = async (req, res, next) => {
+  Post.findById(req.body.postID).exec().then( post => {
+    Profile.findOne({user: req.userData.userID}).then(profile => {
+      var vote;
+      for(var i = 0; i < post.votes.length; i++){
+        if(post.votes[i].profileID.toString() == profile._id.toString()){
+          vote = post.votes[i];
+          vote.vote =  req.body.vote % 2;
+          post.votes[i] = vote;
+          break;
+        } 
+      }
+      if(vote === undefined){
+        vote = {
+          profileID: profile._id,
+          vote: req.body.vote % 2
+        };
+        post.votes.push(vote);
+      } 
+      var likes = 0;
+      var dislikes = 0;
+
+      post.votes.filter((vote) => vote.vote != 0).map((vote, i) => {
+        if(vote.vote === 1){
+          likes++;
+        }else{
+          dislikes++;
+        }
+      });
+      
+      post.numDislikes = dislikes;
+      post.numLikes = likes;
+      
+      post.save().then( result => {
+        res.status(200).json({
+          message: "OKAY"
+        });
+      }).catch(err => {res.status(500).json({error: err})});
+    }).catch(err => {
+      return res.status(500).json({
+        error: err
+      });
+    });
+    
+  }).catch( err => {
+    return json.status(500).json({
+      error: err
+    });
+  });
+}
+
 exports.posts_comment = async (req, res, next) => {
     Post.findById(req.body.postID).exec().then(post => {
       post.comments.push({
@@ -95,7 +147,9 @@ exports.posts_comment = async (req, res, next) => {
         console.log(err);
         res.status(500).json({error: err})
       });
-      return res.status(200);
+      return res.status(200).json({
+        message: "OKAY"
+      });
     }).catch(err => {
       console.log(err);
       res.status(500).json({error: err})
