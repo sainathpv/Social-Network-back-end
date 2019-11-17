@@ -8,12 +8,12 @@ const ProfileSchema = mongoose.Schema({
     require: true,
     unique: true
   },  
+  accountType: String,
   profileImageUrl: {
     type: String,
     default: '/assets/images/profiles/default.jpg'
   }, //This is the image name of the user profile image. The actual image is stored in the profileImg
   
-
   name: {type: String, require: true},
   major: {type: String, default: "" }, 
   studentType: {type: String, default: "" },
@@ -24,7 +24,11 @@ const ProfileSchema = mongoose.Schema({
   posts: {type: Array, default: []}, //Array of Strings
   events: {type: Array, default: []}, //Array of EventIDs
   friends: {type: Array, default: []}, //Array of JSON Data with profileIDs and request state
-  chats: {type: Array, default: []} //Array of chatIDs
+  chats: {type: Array, default: []}, //Array of chatIDs
+  settings: {type: Object, default: {
+    darkmode: false,
+    postsSeenOnlyByFriends: false
+  }}
 });
 
 module.exports = mongoose.model('Profile', ProfileSchema);

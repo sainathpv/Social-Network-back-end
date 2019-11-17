@@ -10,16 +10,17 @@ exports.users_signup = async (req, res, next) => {
     try {
       const { firstName, lastName, email, password } = req.body;
       // Find if the user email is already in use
-      const priorUser = await User.findOne({ email }).exec();
-  
+      var priorUser = await User.findOne({ email }).exec();
+      priorUser = priorUser ? priorUser 
+      : await User.findOne({userName: req.body.userName }).exec();
+
       // if a user is found, return an error message
       if (priorUser) {
-        if (priorUser.authorization === true) {
+        if (priorUser.authorization) {
           return res.status(409).json({
             message: 'This email has already been registered'
           });
         } else {
-          console.log(priorUser._id)
           User.remove({ _id: priorUser._id })
             .exec()
             .then(result => {
@@ -49,7 +50,6 @@ exports.users_signup = async (req, res, next) => {
       }
   
       // if the user does not exist, hash the new user's password
-  
       const salt = bcrypt.genSaltSync(10);
       const hash = bcrypt.hashSync(password, salt);
   
@@ -61,24 +61,37 @@ exports.users_signup = async (req, res, next) => {
       };
   
       const secret = speakEasy.generateSecret(MFAOptions);
-  
-      console.log("it works here")
-  
       // create a new user with the input information and hashed passsword
-      const user = new User({
-        _id: new mongoose.Types.ObjectId(),
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        password: hash,
-        twoFASecret: secret.base32,
-        authorization: false
-      });
+      var user;
+      if(req.body.accountType === "student"){
+        user = new User({
+          _id: new mongoose.Types.ObjectId(),
+          firstName: firstName,
+          lastName: lastName,
+          userName: req.body.userName,
+          email: email,
+          password: hash,
+          twoFASecret: secret.base32,
+          authorization: false
+        });
+      }else{
+        user = new User({
+          _id: new mongoose.Types.ObjectId(),
+          company: company,
+          userName: req.body.userName,
+          email: email,
+          password: hash,
+          twoFASecret: secret.base32,
+          authorization: false
+        });
+      }
+
   
       const profile = new Profile({
         _id: new mongoose.Types.ObjectId(),
         user: user._id,
-        name: user.firstName + " " + user.lastName,
+        name: user.userName,
+        accountType: user.accountType,
       });
   
       //Asynchronously save the user to the database

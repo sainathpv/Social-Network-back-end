@@ -3,126 +3,119 @@ const mongoose = require('mongoose');
 const Profile = require('../models/profile');
 
 exports.posts_post = async (req, res, next) => {
-    try {
-      var content;
-      if(req.body.type === "image"){
-        //Need help with this
-      }else if(req.body.type === "video"){
-        content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
-      }else{
-        content = req.body.content;
-      }
-  
-      const post = new Post({
-        _id: new mongoose.Types.ObjectId(),
-        profileID: req.body.profileID, 
-        comments: [],
-        numLikes: 0,
-        name: req.body.name,
-        numDislikes: 0,
-        tags: req.body.tags,
-        title: req.body.title,
-        type: req.body.type,
-        content: content
-      });
-  
+  Profile.findOne({user: req.userData.userID}).then( profile => {
+    var content;
+    if(req.body.type === "image"){
+      //Need help with this
+    }else if(req.body.type === "video"){
+      content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
+    }else{
+      content = req.body.content;
+    }
+
+    const post = new Post({
+      _id: new mongoose.Types.ObjectId(),
+      profileID: profile._id, 
+      comments: [],
+      numLikes: 0,
+      name: profile.name,
+      numDislikes: 0,
+      tags: req.body.tags,
+      title: req.body.title,
+      type: req.body.type,
+      content: content
+    });
+    
+    profile.push(post._id);
+
+    profile.save().then( result => {
       post.save().then(result => {
         return res.status(200).json({
           message: "Post created"
         });
-      }).catch(err => {
-        console.log(err)
-        return res.status(409).json({
-          message: "post Failed"
-        });
-      })
-    } catch (error) {
-      console.log(error)
-      return res.status(500).json({
-        message: 'Server error'
-      });
-    }
+      }).catch(err => res.status(500).json({error: err}));
+    }).catch(err => res.status(500).json({error: err}));
+  }).catch(err => res.status(500).json({error: err}));
 }
 
 // This is the helper for getPosts router after this function
 function getPost(tags, listOfPost, i, length, callback) {
     Post.find({ tags: tags[i] })
-      .populate("post")
-      .exec()
-      .then(result => {
-        
+    .populate("post")
+    .exec()
+    .then(result => {
         listOfPost = listOfPost.concat(result)
         if (i == length - 1 || -1 == length -1) {
-          console.log(i)
-          callback(listOfPost)
+            console.log(i)
+            callback(listOfPost)
         } else {
-          getPost(tags, listOfPost, i + 1, length, callback);
+            getPost(tags, listOfPost, i + 1, length, callback);
         }
-      })
-      .catch(err => {
+    })
+    .catch(err => {
         console.log(err);
         return "Something is wrong when getting all the post";
-      });
-  }
+    });
+}
 
 exports.posts_get = async (req, res, next) => {
-    console.log(JSON.parse(req.query.tags));
+
     var listOfTags = JSON.parse(req.query.tags);
     var listOfPost = [];
     try {
-      var i = 0;
-      getPost(listOfTags, listOfPost, i, listOfTags.length, function (result) {
-        listOfPost = listOfPost.concat(result)
-        res.status(200).json({
-          return: listOfPost
+        var i = 0;
+        getPost(listOfTags, listOfPost, i, listOfTags.length, function (result) {
+            listOfPost = listOfPost.concat(result)
+            res.status(200).json({
+                return: listOfPost
+            });
         });
-      });
     } catch (error) {
-      console.error(error.message);
-      return res.status(500).json({
-        message: 'Server error'
-      });
+        console.error(error.message);
+        return res.status(500).json({
+            message: 'Server error'
+        });
     }
 }
 
 exports.posts_vote = async (req, res, next) => {
   Post.findById(req.body.postID).exec().then( post => {
     Profile.findOne({user: req.userData.userID}).then(profile => {
-      var vote;
-      for(var i = 0; i < post.votes.length; i++){
-        if(post.votes[i].profileID.toString() == profile._id.toString()){
-          vote = post.votes[i];
-          vote.vote =  req.body.vote % 2;
-          post.votes[i] = vote;
-          break;
-        } 
-      }
-      if(vote === undefined){
-        vote = {
-          profileID: profile._id,
-          vote: req.body.vote % 2
-        };
-        post.votes.push(vote);
-      } 
-      var likes = 0;
-      var dislikes = 0;
-
-      post.votes.filter((vote) => vote.vote != 0).map((vote, i) => {
-        if(vote.vote === 1){
-          likes++;
-        }else{
-          dislikes++;
+        var vote;
+        for(var i = 0; i < post.votes.length; i++){
+            if(post.votes[i].profileID.toString() == profile._id.toString()){
+                vote = post.votes[i];
+                vote.vote =  req.body.vote % 2;
+                post.votes[i] = vote;
+                break;
+            } 
         }
-      });
-      
-      post.numDislikes = dislikes;
-      post.numLikes = likes;
-      
-      post.save().then( result => {
-        res.status(200).json({
-          message: "OKAY"
+        if(vote === undefined){
+            vote = {
+                profileID: profile._id,
+                vote: req.body.vote % 2
+            };
+            post.votes.push(vote);
+        } 
+        var likes = 0;
+        var dislikes = 0;
+
+        post.votes.filter((vote) => vote.vote != 0).map((vote, i) => {
+            if(vote.vote === 1){
+                likes++;
+            }else{
+                dislikes++;
+            }
         });
-      }).catch(err => {res.status(500).json({error: err})});
+        
+        post.numDislikes = dislikes;
+        post.numLikes = likes;
+        
+        post.save().then( result => {
+            res.status(200).json({
+                message: "OKAY"
+            });
+        }).catch(err => {res.status(500).json({error: err})});
     }).catch(err => {
       return res.status(500).json({
         error: err
