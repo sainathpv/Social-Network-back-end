@@ -13,6 +13,8 @@ exports.posts_post = async (req, res, next) => {
       content = req.body.content;
     }
 
+    console.log(req.body);
+
     const post = new Post({
       _id: new mongoose.Types.ObjectId(),
       profileID: profile._id, 
@@ -26,17 +28,28 @@ exports.posts_post = async (req, res, next) => {
       content: content
     });
     
-    profile.push(post._id);
+    profile.posts.push(post._id);
 
     profile.save().then( result => {
       post.save().then(result => {
         return res.status(200).json({
           message: "Post created"
         });
-      }).catch(err => res.status(500).json({error: err}));
-    }).catch(err => res.status(500).json({error: err}));
-  }).catch(err => res.status(500).json({error: err}));
+      }).catch(err => { res.status(500).json({error: err}); console.log(err)});
+    }).catch(err => { res.status(500).json({error: err}); console.log(err)});
+  }).catch(err => { res.status(500).json({error: err}); console.log(err)});
 }
+exports.posts_getByID = (req, res, next) => {
+  Post.findById(req.params.id).exec().then( post => {
+    if(post === null){
+      return res.status(400).json({
+        message: "Malformed"
+      });
+    }
+    return res.status(200).json(post);
+  }).catch( err => { res.status(500).json({error: err}); console.log(err); });
+}
+
 
 // This is the helper for getPosts router after this function
 function getPost(tags, listOfPost, i, length, callback) {

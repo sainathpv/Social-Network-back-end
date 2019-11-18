@@ -44,4 +44,6 @@ router.post("/postComment", PostController.posts_comment);
 
 router.post("/postvote", check2Auth, PostController.posts_vote);
 
+router.get('/postByID/:id', PostController.posts_getByID);
+
 module.exports = router;
