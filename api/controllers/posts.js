@@ -9,34 +9,72 @@ exports.posts_post = async (req, res, next) => {
       //Need help with this
     }else if(req.body.type === "video"){
       content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
+    }else if(req.body.type === "post"){
+      Post.findById(req.body.content).exec().then(result => {
+        if(result === null){
+          return res.status(400).json({
+            message: "Malformed"
+          });
+        }
+
+        if(result.type === "post"){
+          content = result.content;
+        }else{
+          content = req.body.content;
+        }
+
+        
+        const post = new Post({
+          _id: new mongoose.Types.ObjectId(),
+          profileID: profile._id, 
+          comments: [],
+          numLikes: 0,
+          name: profile.name,
+          numDislikes: 0,
+          tags: req.body.tags,
+          title: req.body.title,
+          type: req.body.type,
+          content: content
+        });
+        
+        profile.posts.push(post._id);
+
+        profile.save().then( result => {
+          post.save().then(result => {
+            return res.status(200).json({
+              message: "Post created"
+            });
+          }).catch(err => { res.status(500).json({error: err}); console.log(err)});
+        }).catch(err => { res.status(500).json({error: err}); console.log(err)});
+
+      });
     }else{
       content = req.body.content;
+      
+      const post = new Post({
+        _id: new mongoose.Types.ObjectId(),
+        profileID: profile._id, 
+        comments: [],
+        numLikes: 0,
+        name: profile.name,
+        numDislikes: 0,
+        tags: req.body.tags,
+        title: req.body.title,
+        type: req.body.type,
+        content: content
+      });
+      
+      profile.posts.push(post._id);
+
+      profile.save().then( result => {
+        post.save().then(result => {
+          return res.status(200).json({
+            message: "Post created"
+          });
+        }).catch(err => { res.status(500).json({error: err}); console.log(err)});
+      }).catch(err => { res.status(500).json({error: err}); console.log(err)});
     }
 
-    console.log(req.body);
-
-    const post = new Post({
-      _id: new mongoose.Types.ObjectId(),
-      profileID: profile._id, 
-      comments: [],
-      numLikes: 0,
-      name: profile.name,
-      numDislikes: 0,
-      tags: req.body.tags,
-      title: req.body.title,
-      type: req.body.type,
-      content: content
-    });
-    
-    profile.posts.push(post._id);
-
-    profile.save().then( result => {
-      post.save().then(result => {
-        return res.status(200).json({
-          message: "Post created"
-        });
-      }).catch(err => { res.status(500).json({error: err}); console.log(err)});
-    }).catch(err => { res.status(500).json({error: err}); console.log(err)});
   }).catch(err => { res.status(500).json({error: err}); console.log(err)});
 }
 exports.posts_getByID = (req, res, next) => {
@@ -49,7 +87,6 @@ exports.posts_getByID = (req, res, next) => {
     return res.status(200).json(post);
   }).catch( err => { res.status(500).json({error: err}); console.log(err); });
 }
-
 
 // This is the helper for getPosts router after this function
 function getPost(tags, listOfPost, i, length, callback) {
