@@ -45,8 +45,8 @@ app.use('/users', userRoutes);
 const postRoutes = require("./api/routes/posts");
 app.use('/posts', postRoutes);
 
-const commentsRoutes = require("./api/routes/comments");
-app.use('/comments', commentsRoutes);
+const imageRoutes = require('./api/routes/images');
+app.use('/images', imageRoutes);
 
 const twoFARoutes = require('./api/routes/twoFA');
 app.use('/twoFA', twoFARoutes);

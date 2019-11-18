@@ -3,11 +3,12 @@ const mongoose = require('mongoose');
 const Profile = require('../models/profile');
 
 exports.posts_post = async (req, res, next) => {
+  console.log(req.body);
+  var i = 1;
   Profile.findOne({user: req.userData.userID}).then( profile => {
+    console.log("test" + i++);
     var content;
-    if(req.body.type === "image"){
-      //Need help with this
-    }else if(req.body.type === "video"){
+    if(req.body.type === "video"){
       content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
     }else if(req.body.type === "post"){
       Post.findById(req.body.content).exec().then(result => {
@@ -38,7 +39,7 @@ exports.posts_post = async (req, res, next) => {
         });
         
         profile.posts.push(post._id);
-
+        console.log(post);
         profile.save().then( result => {
           post.save().then(result => {
             return res.status(200).json({
@@ -50,7 +51,7 @@ exports.posts_post = async (req, res, next) => {
       });
     }else{
       content = req.body.content;
-      
+      console.log(content);
       const post = new Post({
         _id: new mongoose.Types.ObjectId(),
         profileID: profile._id, 
