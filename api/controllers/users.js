@@ -66,7 +66,7 @@ exports.users_signup = async (req, res, next) => {
       // create a new user with the input information and hashed passsword
       var user;
 
-      if(req.body.accountType == "Student"){
+      if(req.body.accountType == "student"){
         user = new User({
           _id: new mongoose.Types.ObjectId(),
           firstName: firstName,
