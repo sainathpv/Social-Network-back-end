@@ -6,41 +6,43 @@ const speakEasy = require('speakeasy');
 const qrcode = require('qrcode');
 const mongoose = require('mongoose');
 
+function deletePriorUser(user){
+  if (user.authorization) {
+    return true;
+  } else {
+  User.deleteOne({ _id: user._id })
+    .exec()
+    .then(result => {
+      console.log(result);
+    })
+    .catch(err => {
+      console.log(err);
+    });
+
+  Profile.deleteOne({ user: user._id })
+    .exec()
+    .then(result => {
+      console.log(result);
+      return false;
+    })
+    .catch(err => {
+      console.log(err);
+    });
+  }
+}
+
 exports.users_signup = async (req, res, next) => {
     try {
       const { firstName, lastName, email, password } = req.body;
       // Find if the user email is already in use
       var priorUser = await User.findOne({ email }).exec();
-      priorUser = priorUser ? priorUser 
-      : await User.findOne({userName: req.body.userName }).exec();
 
       // if a user is found, return an error message
       if (priorUser) {
-        if (priorUser.authorization) {
-          return res.status(409).json({
-            message: 'This email has already been registered'
-          });
-        } else {
-          User.remove({ _id: priorUser._id })
-            .exec()
-            .then(result => {
-              console.log(result);
-            })
-            .catch(err => {
-              console.log(err);
-              return res.status(500).json({ error: err })
-            });
-  
-          Profile.remove({ user: priorUser._id })
-            .exec()
-            .then(result => {
-              console.log(result);
-            })
-            .catch(err => {
-              console.log(err);
-              return res.status(500).json({ error: err })
-            });
-        }
+        deletePriorUser(priorUser);
+        return res.status(409).json({
+          message: 'This email has already been registered'
+        });
       }
   
       if (password.length < 6) {
@@ -63,7 +65,8 @@ exports.users_signup = async (req, res, next) => {
       const secret = speakEasy.generateSecret(MFAOptions);
       // create a new user with the input information and hashed passsword
       var user;
-      if(req.body.accountType === "student"){
+
+      if(req.body.accountType == "Student"){
         user = new User({
           _id: new mongoose.Types.ObjectId(),
           firstName: firstName,
@@ -74,6 +77,7 @@ exports.users_signup = async (req, res, next) => {
           twoFASecret: secret.base32,
           authorization: false
         });
+        console.log(user);
       }else{
         user = new User({
           _id: new mongoose.Types.ObjectId(),
@@ -90,40 +94,44 @@ exports.users_signup = async (req, res, next) => {
       const profile = new Profile({
         _id: new mongoose.Types.ObjectId(),
         user: user._id,
-        name: user.userName,
         accountType: user.accountType,
+        name: user.userName,
       });
-  
+      const data_url = await qrcode.toDataURL(secret.otpauth_url);
       //Asynchronously save the user to the database
-      user.save().then().catch(err => {
+      user.save().then(result => {
+        profile.save().then(result => {
+            
+          //generate a jwt token before proceeding to 2FA auth
+          const token = jwt.sign(
+            {
+              userid: user._id,
+              email: email,
+              twofactor: false
+            },
+            process.env.JWT_KEY,
+            {
+              expiresIn: '7d'
+            }
+          );
+          // then return the qrcode for user to scan, Ben should be able to convert the data_url to a image in front end
+          
+      
+          return res.status(200).json({
+            data_url,
+            token
+          });
+    
+        });
+      }).catch(err => {
+        console.log(err);
         return res.status(409).json({
           message: 'Your email format is not valid'
         });
       });
   
-      profile.save();
-  
-      //generate a jwt token before proceeding to 2FA auth
-      const token = jwt.sign(
-        {
-          userid: user._id,
-          email: email,
-          twofactor: false
-        },
-        process.env.JWT_KEY,
-        {
-          expiresIn: '7d'
-        }
-      );
-  
-      // then return the qrcode for user to scan, Ben should be able to convert the data_url to a image in front end
-      const data_url = await qrcode.toDataURL(secret.otpauth_url);
-  
-      return res.status(200).json({
-        data_url,
-        token
-      });
-  
+      
+
     } catch (err) {
       console.log(err);
       res.status(500).json({ error: err });

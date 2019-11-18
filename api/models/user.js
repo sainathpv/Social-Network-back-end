@@ -5,15 +5,14 @@ const userSchema = mongoose.Schema({
   accountType: {type: String, require: true},
   company: String,
   userName: {type: String, require: true},
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
+  firstName: { type: String },
+  lastName: { type: String },
   password: { type: String, required: true },
   // Email has clear format by using match
   email: {
     type: String,
     required: true,
-    unique: true,
-    match: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    unique: true
   },
   // this will be a string and only gets updated by the twoFA.js (could be issue tho because people can actually update this from users.js when they sign up)
   twoFASecret: {
