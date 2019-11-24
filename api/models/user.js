@@ -19,7 +19,8 @@ const userSchema = mongoose.Schema({
   twoFASecret: {
     type: String
   },
-
+  questions: {type: Array, default: []},
+  captcha: {type: Boolean, default: false},
   resetPswToken: { type: String },
   resetPswExpires: { type: Date },
   authorization: {type: Boolean, required: true}
