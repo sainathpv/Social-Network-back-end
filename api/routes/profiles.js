@@ -36,4 +36,6 @@ router.post('/editprofile', check2Auth, upload.single('profilePicture'), Profile
 
 router.get('/profile', check2Auth, ProfileController.profile_get);
 
+router.post('/editprofile_interest', check2Auth, ProfileController.profile_interest_edit);
+
 module.exports = router;
