@@ -45,47 +45,48 @@ exports.events_create = (req, res, next) => {
 exports.events_get = async (req, res, next) => {
     try {
         var events = [];
-        for(var i = 0; i < req.query.eventIDs.length; i++){
-            Event.findById(req.query.eventIDs[i]).exec().then(result => {
-                console.log(result);
-                if(result != null){
-                    var now = new Date();
-                    //the date hasn't past
-                    if(result < now){
-                        var event = {
-                            date: result.date,
-                            company: result.company,
-                            eventName: result.eventName,
-                            location: result.location
-                        }
-                        events.push(event);
-                    }else{
-                        Event.findByIdAndRemove(req.query.eventIDs[i]).exec().then(result => {
-                        Profile.findOne({user: req.userData.userID}).exec().then( user => {
-                                for(var j = 0; j < user.events.length; j++){
-                                    if(event._id.toString() === user.events[j].toString()){
-                                        user = user.events.splice(j, 1);
-                                        user.markModified('events');
-                                        user.save();
-                                        break;
-                                    }
-                                }
-                            });
-                        });
+        var eventIDs = JSON.parse(req.query.eventIDs);
+
+        for(var i = 0; i < eventIDs.length; i++){
+            var event = Event.findById(eventIDs[i]).exec();
+            if(event != null){
+                var now = new Date();
+                //the date hasn't past
+                if(event.date < now){
+                    var eventOBJ = {
+                        date: event.date,
+                        company: event.company,
+                        eventName: event.eventName,
+                        location: event.location
                     }
+                    events.push(eventOBJ);
                 }else{
-                    return res.status(410).json({
-                        message: "GONE"
-                    });
+                    var id = eventIDs[i];
+                    var event = await Event.findByIdAndRemove(id).exec();
+                    var user = await Profile.findOne({user: req.userData.userID}).exec();
+
+                    for(var j = 0; j < user.events.length; j++){
+                        if(event._id.toString() === user.events[j].toString()){
+                            user = user.events.splice(j, 1);
+                            user.markModified('events');
+                            user.save();
+                            break;
+                        }
+                    }
+
                 }
-            });
+            }else{
+                return res.status(410).json({
+                    message: "GONE"
+                });
+            }
         }
 
         return res.status(200).json({
             events: events
         });
     } catch (error) {
-        console.error(error.message);
+        console.error("ERROR " + error.message);
         return res.status(500).json({
             message: 'Server error'
         });

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const friends = require('../models/friends');
-const profile = require('../models/profiles');
+const profile = require('../models/profile');
 
 exports.friends_create = (req, res, next) => {
     try {
@@ -28,7 +28,7 @@ exports.friends_create = (req, res, next) => {
 
 exports.friends_get = (req, res, next) => {
     try {
-        profile.findOne({ user: req.UserData.userID }).then(profile => {
+        profile.findOne({ user: req.userData.userID }).then(profile => {
             friends
                 .findById(profile.friends)
                 .exec()
