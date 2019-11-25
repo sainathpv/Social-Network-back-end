@@ -97,7 +97,6 @@ function getPost(tags, listOfPost, i, length, callback) {
     .then(result => {
         listOfPost = listOfPost.concat(result)
         if (i == length - 1 || -1 == length -1) {
-            console.log(i)
             callback(listOfPost)
         } else {
             getPost(tags, listOfPost, i + 1, length, callback);
@@ -129,18 +128,56 @@ exports.posts_get = async (req, res, next) => {
     }
 }
 
-exports.posts_vote = async (req, res, next) => {
-  Post.findById(req.body.postID).exec().then( post => {
+exports.posts_getVote = async (req, res, next) => {
+  Post.findById(req.params.postID).exec().then( post => {
     Profile.findOne({user: req.userData.userID}).then(profile => {
         var vote;
+        //Find if the user has voted
         for(var i = 0; i < post.votes.length; i++){
             if(post.votes[i].profileID.toString() == profile._id.toString()){
                 vote = post.votes[i];
-                vote.vote =  req.body.vote % 2;
-                post.votes[i] = vote;
-                break;
+                return res.status(200).json({
+                  vote: vote.vote
+                })
             } 
         }
+
+        //if not voted
+        if(vote === undefined){
+          return res.status(204).json({
+            vote: 0
+          })
+        } 
+
+    }).catch(err => {
+      return res.status(500).json({
+        error: err
+      });
+    });
+    
+  }).catch( err => {
+    return json.status(500).json({
+      error: err
+    });
+  });
+}
+
+exports.posts_vote = async (req, res, next) => {
+  Post.findById(req.body.postID).exec().then( post => {
+    Profile.findOne({user: req.userData.userID}).exec().then(profile => {
+        var vote;
+
+        //Find if the user has voted
+        for(var i = 0; i < post.votes.length; i++){
+          if(post.votes[i].profileID.toString() == profile._id.toString()){
+            vote = post.votes[i];
+            vote.vote =  req.body.vote % 2;
+            post.votes[i] = vote;
+            break;
+          } 
+        }
+
+        //if not voted
         if(vote === undefined){
             vote = {
                 profileID: profile._id,
@@ -150,7 +187,7 @@ exports.posts_vote = async (req, res, next) => {
         } 
         var likes = 0;
         var dislikes = 0;
-
+        //update post
         post.votes.filter((vote) => vote.vote != 0).map((vote, i) => {
             if(vote.vote === 1){
                 likes++;
@@ -161,12 +198,15 @@ exports.posts_vote = async (req, res, next) => {
         
         post.numDislikes = dislikes;
         post.numLikes = likes;
-        
+        post.markModified('votes');
         post.save().then( result => {
-            res.status(200).json({
-                message: "OKAY"
+            console.log(result);
+            return res.status(200).json({
+                numDislikes: dislikes,
+                numLikes: likes
             });
         }).catch(err => {res.status(500).json({error: err})});
+
     }).catch(err => {
       return res.status(500).json({
         error: err

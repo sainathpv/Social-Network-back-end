@@ -54,10 +54,6 @@ app.use('/twoFA', twoFARoutes);
 const forgot_psw = require('./api/routes/forgot_psw');
 app.use('/forgot_psw', forgot_psw);
 
-const forgot_psw_email = require('./api/routes/forgot_psw_email');
-app.use('/forgot_psw_email', forgot_psw_email);
-
-
 app.use(flash());
 
 app.use((req, res, next) => {
@@ -70,8 +66,7 @@ app.use((error, req, res, next) => {
   res.status(error.status || 500);
   res.json({
     error: {
-      message: error.message,
-      messagetwo: 'not found'
+      message: "ERROR"
     }
   });
 });
