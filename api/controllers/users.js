@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const Profile = require('../models/profile');
+const Friend = require('../models/friends');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const speakEasy = require('speakeasy');
@@ -72,7 +73,7 @@ exports.users_signup = async (req, res, next) => {
         // if a user is found, return an error message
         if (priorUser) {
             var user = await deletePriorUser(priorUser)
-            if(!user){
+            if(user){
                 return res.status(409).json({
                     message: 'This email has already been registered'
                 });
@@ -83,7 +84,7 @@ exports.users_signup = async (req, res, next) => {
 
         if (priorUser) {
             var user = await deletePriorUser(priorUser);
-            if(!user){
+            if(user){
                 return res.status(409).json({
                     message: 'This email has already been registered'
                 });
@@ -136,40 +137,47 @@ exports.users_signup = async (req, res, next) => {
                 authorization: false
             });
         }
-
-
+        
         const profile = new Profile({
             _id: new mongoose.Types.ObjectId(),
             user: user._id,
+            interests: ["questions"],
             accountType: user.accountType,
             name: user.userName,
         });
+        
+        const friends = new Friend({
+            _id: new mongoose.Types.ObjectId(),
+            profileID: profile._id
+        });
+
+        profile.friends = friends._id;
 
         const data_url = await qrcode.toDataURL(secret.otpauth_url);
         //Asynchronously save the user to the database
         user.save().then(result => {
             profile.save().then(result => {
+                friends.save().then(result => {
+                    //generate a jwt token before proceeding to 2FA auth
+                    const token = jwt.sign(
+                        {
+                            userid: user._id,
+                            email: email,
+                            twofactor: false
+                        },
+                        process.env.JWT_KEY,
+                        {
+                            expiresIn: '7d'
+                        }
+                    );
+                    // then return the qrcode for user to scan, Ben should be able to convert the data_url to a image in front end
 
-                //generate a jwt token before proceeding to 2FA auth
-                const token = jwt.sign(
-                    {
-                        userid: user._id,
-                        email: email,
-                        twofactor: false
-                    },
-                    process.env.JWT_KEY,
-                    {
-                        expiresIn: '7d'
-                    }
-                );
-                // then return the qrcode for user to scan, Ben should be able to convert the data_url to a image in front end
 
-
-                return res.status(200).json({
-                    data_url,
-                    token
+                    return res.status(200).json({
+                        data_url,
+                        token
+                    });
                 });
-
             });
         }).catch(err => {
             console.log(err);
@@ -208,14 +216,16 @@ exports.users_login = async (req, res, next) => {
             });
         }
 
-        if (captcha == "" && user.captcha) {
-            return res.status(412).json({
-                message: 'Please fill out the captcha.'
-            });
+        if ( user.captcha) {
+            if(captcha == ""){
+                return res.status(412).json({
+                    message: 'Please fill out the captcha.'
+                });
+            }
         }
 
         user.captcha = false;
-
+        var result = await user.save();
         const token = jwt.sign({
             _id: user._id,
             email: user.email,

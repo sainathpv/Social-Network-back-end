@@ -1,23 +1,68 @@
 const mongoose = require('mongoose');
-const friends = require('../models/friends');
-const profile = require('../models/profile');
+const Friend = require('../models/friends');
+const Profile = require('../models/profile');
 
-exports.friends_create = (req, res, next) => {
+exports.friends_get = async (req, res, next) => {
     try {
-        profile.findOne({ user: req.UserData.userID }).then(profile => {
-            const friends = new friends({
-                _id: new mongoose.Types.ObjectId(),
-                profileID: profile._id
+        var profile = await Profile.findOne({ user: req.userData.userID }).exec();
+        var friends = await Friend.findById(profile.friends).exec();
+        //TODO: updateFriendProfiles(friends);
+        return res.status(200).json({
+            friends: friends
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: 'Server error'
+        });
+    }
+};
+
+exports.friends_requestFriendWithUserName = async (req, res, next) => {
+    try{
+        var profile = await Profile.findOne({ user: req.userData.userID }).exec();
+        var friends = await Friend.findById(profile.friends).exec();
+        var otherProfile = await Profile.findOne({name: req.body.userName});
+        if(otherProfile === null) {
+            return res.status(404).json({
+                message: "NOT FOUND"
             });
-            profile.friends = friends._id;
-            profile.save().then(result => {
-                friends.save().then(result => {
-                    return res.status(200).json({
-                        message: 'OKAY'
-                    });
-                });
-            });
+        }
+        return await sendFriendRequest(res, profile, friends, otherProfile._id);
+    }catch(error){
+        console.log(error);
+        res.status(500).json({
+            message: "ERROR"
         });
+    }
+}
+
+//The friends is from the perspective of its owner ie. when it is 'requestee'
+//the associated profile is being sent the friend request
+exports.friends_edit = async (req, res, next) => {
+    try {
+        var profile = await Profile.findOne({ user: req.userData.userID }).exec();
+        var friends = await Friend.findById(profile.friends).exec();
+
+        for (i = 0; i < friends.profiles.length; i++) {
+            if (friends.profiles[i].profileID.toString() === req.body.friend.profileID.toString()){
+                //reject friend only if requestee
+                if (req.body.friend.status === 'rejected' && friends.profiles[i].status === 'requestee'){
+                    return await modifyFriendStatus(res, friends, req.body.friend, 'rejected', i);
+                //accept friend only if requestee
+                } else if (req.body.friend.status === 'accepted' && friends.profiles[i].status === 'requestee'){
+                    return await modifyFriendStatus(res, friends, req.body.friend, 'accepted', i);
+                //remove friend only if accepted or requester
+                } else if (req.body.friend.status === 'removed' && (friends.profiles[i].status === 'accepted'
+                                                                ||  friends.profiles[i].status === 'requester')){
+                    return await modifyFriendStatus(res, friends, req.body.friend, 'removed', i);
+                }
+            }   
+        }
+        //If no relationship exists send a friend request
+        return await sendFriendRequest(res, friends, req.body.friend.profileID);
+        
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -26,136 +71,77 @@ exports.friends_create = (req, res, next) => {
     }
 };
 
-exports.friends_get = (req, res, next) => {
-    try {
-        profile.findOne({ user: req.userData.userID }).then(profile => {
-            friends
-                .findById(profile.friends)
-                .exec()
-                .then(friends => {
-                    res.status(200).json({
-                        message: friends
-                    });
-                });
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: 'Server error'
-        });
-    }
-};
+async function sendFriendRequest(res, profile, requester, requestee){
+    try{
+        var otherProfile = await Profile.findOne(requestee).exec();
+        var otherFriends = await Friend.findById(otherProfile.friends).exec();
 
-exports.friends_edit = (req, res, next) => {
-    try {
-        profile.findOne({ user: req.UserData.userID }).then(profile => {
-            friends
-                .findById(profile.friends)
-                .exec()
-                .then(friends => {
-                    for (i = 0; i < friends.friends.length; i++) {
-                        if (friends.friends[i]._id.toString() == req.body.friend.friendID) {
-                            if (req.body.friend.status == 'rejected' &&
-                               (friends.friends[i].status == 'requestor' ||
-                               friends.friends[i].status == 'requestee')) {
-                                profile
-                                    .findOne(req.body.friend.friendID)
-                                    .exec()
-                                    .then(friendprofile => {
-                                        friends
-                                            .findById(profile.friends)
-                                            .exec()
-                                            .then(otherfriends => {
-                                                for (i = 0; i < otherfriends.friends.length; i++) {
-                                                    if (
-                                                        otherfriends.friends[i].friendID.toString() ==
-                                                        friends._id.toString()
-                                                    ) {
-                                                        otherfriends.friends[i].splice(i, 1);
-                                                    }
-                                                }
-                                            });
-                                    });
-                                friends.friends[i].splice(i, 1);
-                            } else if (
-                                (req.body.friend.status == 'accepted' &&
-                                    friends.friends[i].status == 'requestor') ||
-                                friends.friends[i].status == 'requestee'
-                            ) {
-                                friends.friends[i].status = 'accepted';
-                                profile
-                                    .findOne(req.body.friend.friendID)
-                                    .exec()
-                                    .then(friendprofile => {
-                                        friends
-                                            .findById(profile.friends)
-                                            .exec()
-                                            .then(otherfriends => {
-                                                for (i = 0; i < otherfriends.friends.length; i++) {
-                                                    if (
-                                                        otherfriends.friends[i].friendID.toString() ==
-                                                        friends._id.toString()
-                                                    ) {
-                                                        otherfriends.friends[i].status = 'accepted';
-                                                    }
-                                                }
-                                            });
-                                    });
-                            } else if (
-                                req.body.friend.status == 'removed' &&
-                                friends.friends[i].status == 'accepted'
-                            ) {
-                                profile
-                                    .findOne(req.body.friend.friendID)
-                                    .exec()
-                                    .then(friendprofile => {
-                                        friends
-                                            .findById(friendprofile.friends)
-                                            .exec()
-                                            .then(otherfriends => {
-                                                for (i = 0; i < otherfriends.friends.length; i++) {
-                                                    if (
-                                                        otherfriends.friends[i].friendID.toString() ==
-                                                        friends._id.toString()
-                                                    ) {
-                                                        otherfriends.friends[i].splice(i, 1);
-                                                    }
-                                                }
-                                            });
-                                    });
-                                friends.friends[i].splice(i, 1);
-                            }
-                        } else {
-                            profile
-                                .findOne(req.body.friend.friendID)
-                                .exec()
-                                .then(friendprofile => {
-                                    friends
-                                        .findById(friendprofile.friends)
-                                        .exec()
-                                        .then(otherfriends => {
-                                            otherfriends.friends.push({
-                                                friendID: profile._id,
-                                                name: profile.name,
-                                                profileIMG: profile.profileIMG,
-                                                status: 'requestee'
-                                            });
-                                            friends.friends.push({
-                                                friendID: otherfriends._id,
-                                                name: profile.name,
-                                                profileIMG: profile.profileIMG,
-                                                status: 'requestor'
-                                            });
-                                        });
-                                });
-                        }
-                    }
-                });
+        //adds the friend's infomation to both Friends objects
+        otherFriends.profiles.push({
+            profileID: requester.profileID, //used to access profile info
+            friendID: requester._id, //used to access friend info
+            name: profile.name, //these two prevent addition requests to the server
+            profileIMG: profile.profileImageUrl,
+            status: 'requestee'
         });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: 'Server error'
+
+        requester.profiles.push({
+            profileID: requestee,
+            friendID: otherFriends._id,
+            name: otherProfile.name,
+            profileIMG: otherProfile.profileImageUrl,
+            status: 'requestor'
+        });
+
+        //ensuring update
+        requester.markModified('profiles');
+        otherFriends.markModified('profiles');
+
+        var save1 = await requester.save();
+        var save2 = await otherFriends.save();
+
+        return res.status(200).json({
+            message: "OKAY"
+        });
+    }catch(err){
+        console.log(err);
+        return res.status(500).json({
+            message: "ERROR"
         });
     }
-};
+}
+
+async function modifyFriendStatus(res, requester, requestee, status, index){
+    try{
+        var otherProfile = await Profile.findById(requestee.profileID).exec();
+        var otherFriends = await Friend.findById(otherProfile.friends).exec();
+
+        //find the requester in the other friends object
+        for (i = 0; i < otherFriends.profiles.length; i++) {
+            if (otherFriends.profiles[i].profileID.toString() === requester.profileID.toString()){
+                //modify status unless marked for remove then delete
+                if(status !== 'removed'){
+                    otherFriends.profiles[i].status = status;
+                    requester.profiles[index].status = status;
+                }else{
+                    otherfriends.profiles.splice(i, 1);
+                    requester.profiles.splice(index, 1);
+                }
+                //ensure update
+                requester.markModified('profiles');
+                otherFriends.markModified('profiles');
+                
+                var save1 = await requester.save();
+                var save2 = await otherFriends.save();
+                return res.status(200).json({
+                    message: "OKAY"
+                });
+            }
+        }
+    }catch(err){
+        console.log(err);
+        res.status(500).json({
+            message: "ERROR"
+        });
+    }
+}

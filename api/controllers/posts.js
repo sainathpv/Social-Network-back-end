@@ -3,10 +3,11 @@ const mongoose = require('mongoose');
 const Profile = require('../models/profile');
 
 exports.posts_post = async (req, res, next) => {
-  console.log(req.body);
-  var i = 1;
+
+  
+  var tags = req.body.tags.toLowerCase();
+
   Profile.findOne({user: req.userData.userID}).then( profile => {
-    console.log("test" + i++);
     var content;
     if(req.body.type === "video"){
       content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
@@ -23,7 +24,6 @@ exports.posts_post = async (req, res, next) => {
         }else{
           content = req.body.content;
         }
-
         
         const post = new Post({
           _id: new mongoose.Types.ObjectId(),
@@ -32,14 +32,13 @@ exports.posts_post = async (req, res, next) => {
           numLikes: 0,
           name: profile.name,
           numDislikes: 0,
-          tags: req.body.tags,
+          tags: tags,
           title: req.body.title,
           type: req.body.type,
           content: content
         });
         
         profile.posts.push(post._id);
-        console.log(post);
         profile.save().then( result => {
           post.save().then(result => {
             return res.status(200).json({
@@ -59,7 +58,7 @@ exports.posts_post = async (req, res, next) => {
         numLikes: 0,
         name: profile.name,
         numDislikes: 0,
-        tags: req.body.tags,
+        tags: tags,
         title: req.body.title,
         type: req.body.type,
         content: content
@@ -78,6 +77,7 @@ exports.posts_post = async (req, res, next) => {
 
   }).catch(err => { res.status(500).json({error: err}); console.log(err)});
 }
+
 exports.posts_getByID = (req, res, next) => {
   Post.findById(req.params.id).exec().then( post => {
     if(post === null){
@@ -91,12 +91,12 @@ exports.posts_getByID = (req, res, next) => {
 
 // This is the helper for getPosts router after this function
 function getPost(tags, listOfPost, i, length, callback) {
-    Post.find({ tags: tags[i] })
+    Post.find({ tags: tags[i].toLowerCase() })
     .populate("post")
     .exec()
     .then(result => {
         listOfPost = listOfPost.concat(result)
-        if (i == length - 1 || -1 == length -1) {
+        if (i == (length - 1) || -1 == (length -1)) {
             callback(listOfPost)
         } else {
             getPost(tags, listOfPost, i + 1, length, callback);
@@ -146,7 +146,7 @@ exports.posts_getVote = async (req, res, next) => {
         if(vote === undefined){
           return res.status(204).json({
             vote: 0
-          })
+          });
         } 
 
     }).catch(err => {
