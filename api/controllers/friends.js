@@ -6,7 +6,8 @@ exports.friends_get = async (req, res, next) => {
     try {
         var profile = await Profile.findOne({ user: req.userData.userID }).exec();
         var friends = await Friend.findById(profile.friends).exec();
-        //TODO: updateFriendProfiles(friends);
+        var update = await updateFriendProfiles(friends);
+
         return res.status(200).json({
             friends: friends
         });
@@ -18,6 +19,16 @@ exports.friends_get = async (req, res, next) => {
         });
     }
 };
+
+async function updateFriendProfiles(friends){
+    for(var i = 0; i < friends.profiles.length; i++){
+        var profile = await Profile.findById(friends.profiles[i].profileID).exec();
+        friends.profiles[i].profileIMG = profile.profileImageUrl;
+        friends.markModified('profiles');
+        var save = friends.save();
+    }
+}
+
 
 exports.friends_requestFriendWithUserName = async (req, res, next) => {
     try{
@@ -119,8 +130,8 @@ async function modifyFriendStatus(res, requester, requestee, status, index){
         //find the requester in the other friends object
         for (i = 0; i < otherFriends.profiles.length; i++) {
             if (otherFriends.profiles[i].profileID.toString() === requester.profileID.toString()){
-                //modify status unless marked for remove then delete
-                if(status !== 'removed'){
+                //modify status unless marked for removal then delete
+                if(status !== 'removed' && status !== 'rejected'){
                     otherFriends.profiles[i].status = status;
                     requester.profiles[index].status = status;
                 }else{
