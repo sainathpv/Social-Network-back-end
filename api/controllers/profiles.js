@@ -5,17 +5,20 @@ exports.profile_edit = async (req, res, next) => {
     try {
       const profileUpdate = {};
       const userUpdate = {};
-      const { bio, interests, name, major, fname, lname} = req.body;
+      const { trueName, bio, name, major, fname, lname, studentYear, studentType} = req.body;
 
       if (bio) profileUpdate.bio = bio;
       if (name) {
         profileUpdate.name = name;
         userUpdate.userName = name;
       }
+      console.log(studentYear)
+      console.log(studentType)
+      profileUpdate.studentType = studentType;
+      profileUpdate.year = studentYear;
 
       console.log("this is my name"+ name)
-      if (fname) userUpdate.firstName = fname;
-      if (lname) userUpdate.lastName = lname;
+      if (trueName) userUpdate.trueName = trueName;
       //if (interests) profileUpdate.interests = interests.split(', ');
       if (major) profileUpdate.major = major;
       if (req.file) {
@@ -113,8 +116,7 @@ exports.profile_get = async (req, res, next) => {
       //const { _id, ...profileData } = profile;
       return res.status(200).json({
         name,
-        fname: user.firstName, 
-        lname: user.lastName,
+        trueName: user.trueName, 
         ...profile._doc
       });
     } catch (error) {

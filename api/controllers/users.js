@@ -66,11 +66,12 @@ exports.users_postQuestions = async (req, res, next) => {
 
 exports.users_signup = async (req, res, next) => {
     try {
-        const { firstName, lastName, email, userName, password } = req.body;
+        const {name, email, userName, password } = req.body;
         // Find if the user email is already in use
         var priorUser = await User.findOne({ email }).exec();
         
         // if a user is found, return an error message
+        console.log(priorUser)
         if (priorUser) {
             var user = await deletePriorUser(priorUser)
             if(user){
@@ -86,7 +87,7 @@ exports.users_signup = async (req, res, next) => {
             var user = await deletePriorUser(priorUser);
             if(user){
                 return res.status(409).json({
-                    message: 'This email has already been registered'
+                    message: 'This Username has already been registered'
                 });
             }
         }
@@ -117,9 +118,8 @@ exports.users_signup = async (req, res, next) => {
         if (req.body.accountType == "student") {
             user = new User({
                 _id: new mongoose.Types.ObjectId(),
-                firstName: firstName,
-                lastName: lastName,
-                userName: req.body.userName,
+                name: name,
+                userName: userName,
                 email: email,
                 password: pwdHash,
                 twoFASecret: secret.base32,
