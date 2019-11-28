@@ -9,6 +9,10 @@ router.get('/getPosts', PostController.posts_get);
 
 router.post("/postComment", PostController.posts_comment);
 
+router.get("/postGetPoll/:pollID", PostController.posts_getPoll);
+
+router.post("/postVotePoll", check2Auth, PostController.posts_votePoll);
+
 router.post("/postvote", check2Auth, PostController.posts_vote);
 
 router.get("/getvote/:postID", check2Auth, PostController.posts_getVote)
