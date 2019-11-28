@@ -41,39 +41,52 @@ exports.events_create = (req, res, next) => {
     });
 }
 
-function getEvent(tags, listOfEvents, i, length, callback) {
-    Event.find({ tags: tags[i] })
-    .populate("event")
-    .exec()
-    .then(result => {
-      
-    listOfEvents = listOfEvents.concat(result)
-        if (i == length - 1 || -1 == length -1) {
-            console.log(i)
-            callback(listOfEvents)
-        } else {
-            getPost(tags, listOfEvents, i + 1, length, callback);
-        }
-    })
-    .catch(err => {
-        console.log(err);
-        return "Something is wrong when getting all the post";
-    });
-}
-
-exports.events_get = (req, res, next) => {
-    var listOfTags = JSON.parse(req.query.tags);
-    var listOfEvents = [];
+//external get
+exports.events_get = async (req, res, next) => {
     try {
-        var i = 0;
-        getEvent(listOfTags, listOfEvents, i, listOfTags.length, function (result) {
-            listOfEvents = listOfEvents;
-            res.status(200).json({
-                return: listOfEvents
-            });
+        var events = [];
+        var eventIDs = JSON.parse(req.query.eventIDs);
+
+        for(var i = 0; i < eventIDs.length; i++){
+            var event = Event.findById(eventIDs[i]).exec();
+            if(event != null){
+                var now = new Date();
+                //the date hasn't past
+                if(event.date < now){
+                    var eventOBJ = {
+                        date: event.date,
+                        company: event.company,
+                        eventName: event.eventName,
+                        location: event.location
+                    }
+                    events.push(eventOBJ);
+                }else{
+                    var id = eventIDs[i];
+                    var event = await Event.findByIdAndRemove(id).exec();
+                    var user = await Profile.findOne({user: req.userData.userID}).exec();
+
+                    for(var j = 0; j < user.events.length; j++){
+                        if(event._id.toString() === user.events[j].toString()){
+                            user = user.events.splice(j, 1);
+                            user.markModified('events');
+                            user.save();
+                            break;
+                        }
+                    }
+
+                }
+            }else{
+                return res.status(410).json({
+                    message: "GONE"
+                });
+            }
+        }
+
+        return res.status(200).json({
+            events: events
         });
     } catch (error) {
-        console.error(error.message);
+        console.error("ERROR " + error.message);
         return res.status(500).json({
             message: 'Server error'
         });
@@ -82,7 +95,7 @@ exports.events_get = (req, res, next) => {
 
 exports.events_edit = (req, res, next) => {
     Event.findById(req.body.eventID).exec().then( event => {
-        const event = new Event({
+        var event = new Event({
             content: req.body.content,
             tags: [req.body.tag],
             eventName: req.body.eventName,
@@ -103,7 +116,6 @@ exports.events_edit = (req, res, next) => {
 exports.events_going = (req, res, next) =>{
    
     Event.findById(req.body.eventID).exec().then( event => {
-
         Profile.findOne({user: req.userData.userID}).exec().then(profile => {
             event.going.includes(profile.profileID);
             event.going.push(profile.profileID);

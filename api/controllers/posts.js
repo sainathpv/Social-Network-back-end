@@ -1,111 +1,131 @@
 const Post = require('../models/post');
 const mongoose = require('mongoose');
 const Profile = require('../models/profile');
-
+const Poll = require('../models/poll');
 exports.posts_post = async (req, res, next) => {
-  console.log(req.body);
-  var i = 1;
-  Profile.findOne({user: req.userData.userID}).then( profile => {
-    console.log("test" + i++);
-    var content;
-    if(req.body.type === "video"){
-      content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
-    }else if(req.body.type === "post"){
-      Post.findById(req.body.content).exec().then(result => {
-        if(result === null){
-          return res.status(400).json({
-            message: "Malformed"
-          });
-        }
+    try{
+        var tags = req.body.tags.toLowerCase();
 
-        if(result.type === "post"){
-          content = result.content;
-        }else{
-          content = req.body.content;
-        }
+        var profile = await Profile.findOne({ user: req.userData.userID });
+        var content;
+        if (req.body.type === "video") {
+            content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
+        }else if (req.body.type === "post"){
 
-        
-        const post = new Post({
-          _id: new mongoose.Types.ObjectId(),
-          profileID: profile._id, 
-          comments: [],
-          numLikes: 0,
-          name: profile.name,
-          numDislikes: 0,
-          tags: req.body.tags,
-          title: req.body.title,
-          type: req.body.type,
-          content: content
-        });
-        
-        profile.posts.push(post._id);
-        console.log(post);
-        profile.save().then( result => {
-          post.save().then(result => {
-            return res.status(200).json({
-              message: "Post created"
+            var share = await Post.findById(req.body.content).exec();
+            if (share === null) {
+                return res.status(400).json({
+                    message: "Malformed"
+                });
+            }
+
+            if (share.type === "post") {
+                content = share.content;
+            }else{
+                content = req.body.content;
+            }
+
+            const post = new Post({
+                _id: new mongoose.Types.ObjectId(),
+                profileID: profile._id,
+                comments: [],
+                numLikes: 0,
+                name: profile.name,
+                numDislikes: 0,
+                tags: tags,
+                title: req.body.title,
+                type: req.body.type,
+                content: content
             });
-          }).catch(err => { res.status(500).json({error: err}); console.log(err)});
-        }).catch(err => { res.status(500).json({error: err}); console.log(err)});
 
-      });
-    }else{
-      content = req.body.content;
-      console.log(content);
-      const post = new Post({
-        _id: new mongoose.Types.ObjectId(),
-        profileID: profile._id, 
-        comments: [],
-        numLikes: 0,
-        name: profile.name,
-        numDislikes: 0,
-        tags: req.body.tags,
-        title: req.body.title,
-        type: req.body.type,
-        content: content
-      });
-      
-      profile.posts.push(post._id);
 
-      profile.save().then( result => {
-        post.save().then(result => {
-          return res.status(200).json({
-            message: "Post created"
-          });
-        }).catch(err => { res.status(500).json({error: err}); console.log(err)});
-      }).catch(err => { res.status(500).json({error: err}); console.log(err)});
+            profile.posts.push(post._id);
+            var save2 = await profile.save();
+            var save3 = await post.save();
+            return res.status(200).json({
+                message: "Post created"
+            });
+        } else {
+            var content; 
+            var poll;
+            if(req.body.type === "poll"){
+                poll = new Poll({
+                    _id: new mongoose.Types.ObjectId(),
+                    categories: req.body.categories.map((category, i) => {
+                        return {
+                            category: category,
+                            votes: 0
+                        };
+                    }),
+                    postID: ""
+                });
+                content = poll._id;
+            }else{
+                content = req.body.content;
+            }
+
+            const post = new Post({
+                _id: new mongoose.Types.ObjectId(),
+                profileID: profile._id,
+                comments: [],
+                numLikes: 0,
+                name: profile.name,
+                numDislikes: 0,
+                tags: tags,
+                title: req.body.title,
+                type: req.body.type,
+                content: content
+            });
+
+            if(req.body.type === "poll"){
+                poll.postID = post._id;
+                var save = await poll.save();
+            }
+
+            profile.posts.push(post._id);
+            var save1 = await profile.save();
+            var save2 = await post.save();
+
+            return res.status(200).json({
+                message: "Post created"
+            });
+        }
+    }catch(error){
+        console.log(error);
+        res.status(500).json({
+            message: "ERROR"
+        });
     }
-
-  }).catch(err => { res.status(500).json({error: err}); console.log(err)});
 }
+
 exports.posts_getByID = (req, res, next) => {
-  Post.findById(req.params.id).exec().then( post => {
-    if(post === null){
-      return res.status(400).json({
-        message: "Malformed"
-      });
-    }
-    return res.status(200).json(post);
-  }).catch( err => { res.status(500).json({error: err}); console.log(err); });
+    Post.findById(req.params.id).exec().then(post => {
+        if (post === null) {
+            return res.status(400).json({
+                message: "Malformed"
+            });
+        }
+        return res.status(200).json(post);
+    }).catch(err => { res.status(500).json({ error: err }); console.log(err); });
 }
 
 // This is the helper for getPosts router after this function
 function getPost(tags, listOfPost, i, length, callback) {
-    Post.find({ tags: tags[i] })
-    .populate("post")
-    .exec()
-    .then(result => {
-        listOfPost = listOfPost.concat(result)
-        if (i == length - 1 || -1 == length -1) {
-            callback(listOfPost)
-        } else {
-            getPost(tags, listOfPost, i + 1, length, callback);
-        }
-    })
-    .catch(err => {
-        console.log(err);
-        return "Something is wrong when getting all the post";
-    });
+    Post.find({ tags: tags[i].toLowerCase() })
+        .populate("post")
+        .exec()
+        .then(result => {
+            listOfPost = listOfPost.concat(result)
+            if (i == (length - 1) || -1 == (length - 1)) {
+                callback(listOfPost)
+            } else {
+                getPost(tags, listOfPost, i + 1, length, callback);
+            }
+        })
+        .catch(err => {
+            console.log(err);
+            return "Something is wrong when getting all the post";
+        });
 }
 
 exports.posts_get = async (req, res, next) => {
@@ -129,113 +149,179 @@ exports.posts_get = async (req, res, next) => {
 }
 
 exports.posts_getVote = async (req, res, next) => {
-  Post.findById(req.params.postID).exec().then( post => {
-    Profile.findOne({user: req.userData.userID}).then(profile => {
-        var vote;
-        //Find if the user has voted
-        for(var i = 0; i < post.votes.length; i++){
-            if(post.votes[i].profileID.toString() == profile._id.toString()){
-                vote = post.votes[i];
-                return res.status(200).json({
-                  vote: vote.vote
-                })
-            } 
-        }
+    Post.findById(req.params.postID).exec().then(post => {
+        Profile.findOne({ user: req.userData.userID }).then(profile => {
+            var vote;
+            //Find if the user has voted
+            for (var i = 0; i < post.votes.length; i++) {
+                if (post.votes[i].profileID.toString() == profile._id.toString()) {
+                    vote = post.votes[i];
+                    return res.status(200).json({
+                        vote: vote.vote
+                    })
+                }
+            }
 
-        //if not voted
-        if(vote === undefined){
-          return res.status(204).json({
-            vote: 0
-          })
-        } 
+            //if not voted
+            if (vote === undefined) {
+                return res.status(204).json({
+                    vote: 0
+                });
+            }
+
+        }).catch(err => {
+            return res.status(500).json({
+                error: err
+            });
+        });
 
     }).catch(err => {
-      return res.status(500).json({
-        error: err
-      });
+        return json.status(500).json({
+            error: err
+        });
     });
-    
-  }).catch( err => {
-    return json.status(500).json({
-      error: err
-    });
-  });
 }
 
 exports.posts_vote = async (req, res, next) => {
-  Post.findById(req.body.postID).exec().then( post => {
-    Profile.findOne({user: req.userData.userID}).exec().then(profile => {
-        var vote;
+    Post.findById(req.body.postID).exec().then(post => {
+        Profile.findOne({ user: req.userData.userID }).exec().then(profile => {
+            var vote;
 
-        //Find if the user has voted
-        for(var i = 0; i < post.votes.length; i++){
-          if(post.votes[i].profileID.toString() == profile._id.toString()){
-            vote = post.votes[i];
-            vote.vote =  req.body.vote % 2;
-            post.votes[i] = vote;
-            break;
-          } 
-        }
-
-        //if not voted
-        if(vote === undefined){
-            vote = {
-                profileID: profile._id,
-                vote: req.body.vote % 2
-            };
-            post.votes.push(vote);
-        } 
-        var likes = 0;
-        var dislikes = 0;
-        //update post
-        post.votes.filter((vote) => vote.vote != 0).map((vote, i) => {
-            if(vote.vote === 1){
-                likes++;
-            }else{
-                dislikes++;
+            //Find if the user has voted
+            for (var i = 0; i < post.votes.length; i++) {
+                if (post.votes[i].profileID.toString() == profile._id.toString()) {
+                    vote = post.votes[i];
+                    vote.vote = req.body.vote % 2;
+                    post.votes[i] = vote;
+                    break;
+                }
             }
-        });
-        
-        post.numDislikes = dislikes;
-        post.numLikes = likes;
-        post.markModified('votes');
-        post.save().then( result => {
-            console.log(result);
-            return res.status(200).json({
-                numDislikes: dislikes,
-                numLikes: likes
+
+            //if not voted
+            if (vote === undefined) {
+                vote = {
+                    profileID: profile._id,
+                    vote: req.body.vote % 2
+                };
+                post.votes.push(vote);
+            }
+            var likes = 0;
+            var dislikes = 0;
+            //update post
+            post.votes.filter((vote) => vote.vote != 0).map((vote, i) => {
+                if (vote.vote === 1) {
+                    likes++;
+                } else {
+                    dislikes++;
+                }
             });
-        }).catch(err => {res.status(500).json({error: err})});
+
+            post.numDislikes = dislikes;
+            post.numLikes = likes;
+            post.markModified('votes');
+            post.save().then(result => {
+                console.log(result);
+                return res.status(200).json({
+                    numDislikes: dislikes,
+                    numLikes: likes
+                });
+            }).catch(err => { res.status(500).json({ error: err }) });
+
+        }).catch(err => {
+            return res.status(500).json({
+                error: err
+            });
+        });
 
     }).catch(err => {
-      return res.status(500).json({
-        error: err
-      });
+        return json.status(500).json({
+            error: err
+        });
     });
-    
-  }).catch( err => {
-    return json.status(500).json({
-      error: err
-    });
-  });
 }
 
 exports.posts_comment = async (req, res, next) => {
     Post.findById(req.body.postID).exec().then(post => {
-      post.comments.push({
-        comment: req.body.comment,
-        user: req.body.user,
-        profile: req.body.profile
-      });
-      post.save().catch(err => {
-        console.log(err);
-        res.status(500).json({error: err})
-      });
-      return res.status(200).json({
-        message: "OKAY"
-      });
+        post.comments.push({
+            comment: req.body.comment,
+            user: req.body.user,
+            profile: req.body.profile
+        });
+        post.save().catch(err => {
+            console.log(err);
+            res.status(500).json({ error: err })
+        });
+        return res.status(200).json({
+            message: "OKAY"
+        });
     }).catch(err => {
-      console.log(err);
-      res.status(500).json({error: err})
+        console.log(err);
+        res.status(500).json({ error: err })
     });
+}
+
+exports.posts_votePoll = async (req, res, next) => {
+    try{
+
+        var profile = await Profile.findById(req.userData.userID);
+        var post = await Post.findById(req.body.postID);
+        var poll = await Poll.findById(post.content);
+
+        //Find if the user has voted
+        var vote;
+        poll.categories.map((category, i) => {
+            category.votes = 0;
+        });
+
+        for (var i = 0; i < poll.votes.length; i++) {
+            if (poll.votes[i].profileID.toString() == profile._id.toString()) {
+                vote = poll.votes[i];
+                vote.vote = req.body.vote % poll.categories.length;
+                poll.votes[i] = vote;
+            }
+            vote = poll.votes[i];
+            poll.categories[poll.votes[i].vote] += 1;
+        }
+
+        poll.markModified('votes');
+        poll.markModified('categories');
+
+        var save = await poll.save();
+
+        return res.status(200).json({
+            message: "OKAY"
+        });
+    } catch (err) {
+        return res.status(500).json({
+            message: "ERROR"
+        });
+    }
+}
+
+exports.posts_getPoll = async (req, res, next) => {
+    try{
+        var poll = await Poll.findById(req.params.pollID);
+        if(poll === null){
+            return res.status(404).json({
+                message: "ERROR"
+            });
+        } 
+        console.log(poll.categories);
+
+        var data = {
+            values: poll.categories.map((category, i) => category.votes),
+            labels: poll.categories.map((category, i) => category.category),
+            type: 'pie'
+        }
+        var datas = [];
+        datas.push(data);
+        return res.status(200).json({
+            data: datas
+        });
+    }catch(error){
+        console.log(error);
+        return res.status(500).json({
+            message: "ERROR"
+        });
+    }
 }

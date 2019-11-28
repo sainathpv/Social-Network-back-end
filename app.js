@@ -54,6 +54,12 @@ app.use('/twoFA', twoFARoutes);
 const forgot_psw = require('./api/routes/forgot_psw');
 app.use('/forgot_psw', forgot_psw);
 
+const events = require('./api/routes/events');
+app.use('/events', events);
+
+const friends = require('./api/routes/friends');
+app.use('/friends', friends);
+
 app.use(flash());
 
 app.use((req, res, next) => {
