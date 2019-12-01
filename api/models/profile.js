@@ -19,7 +19,6 @@ const ProfileSchema = mongoose.Schema({
   studentType: {type: String, default: "" },
   year: {type: String, default: "" }, 
   bio: {type: String, default: "" },//This will be the user's info (bibliography).
-  
   interests: {type: Array, default: []}, //Array of Strings
   posts: {type: Array, default: []}, //Array of Strings
   events: {type: Array, default: []}, //Array of EventIDs

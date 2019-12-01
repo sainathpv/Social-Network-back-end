@@ -5,8 +5,7 @@ const userSchema = mongoose.Schema({
   accountType: {type: String, require: true},
   company: String,
   userName: {type: String, require: true},
-  firstName: { type: String },
-  lastName: { type: String },
+  trueName: {type: String},
   password: { type: String, required: true },
   // Email has clear format by using match
   email: {
