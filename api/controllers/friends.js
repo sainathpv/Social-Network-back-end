@@ -6,8 +6,7 @@ exports.friends_get = async (req, res, next) => {
     try {
         var profile = await Profile.findOne({ user: req.userData.userID }).exec();
         var friends = await Friend.findById(profile.friends).exec();
-        var update = await updateFriendProfiles(friends);
-
+        //updateFriendProfiles(friends);
         return res.status(200).json({
             friends: friends
         });
@@ -22,10 +21,12 @@ exports.friends_get = async (req, res, next) => {
 
 async function updateFriendProfiles(friends){
     for(var i = 0; i < friends.profiles.length; i++){
-        var profile = await Profile.findById(friends.profiles[i].profileID).exec();
+        var profile = await Profile.findById(friends.profiles[i].profileID).exec().catch(err => {
+            console.log("ERROR WHEN UPDATING FRIENDS");
+        })
         friends.profiles[i].profileIMG = profile.profileImageUrl;
         friends.markModified('profiles');
-        var save = friends.save();
+        var save = await friends.save();
     }
 }
 

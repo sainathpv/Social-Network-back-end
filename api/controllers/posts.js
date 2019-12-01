@@ -6,7 +6,10 @@ exports.posts_post = async (req, res, next) => {
     try{
         var tags = req.body.tags.toLowerCase();
 
-        var profile = await Profile.findOne({ user: req.userData.userID });
+        var profile = await Profile.findOne({ user: req.userData.userID }).catch(err => { 
+            console.log(err);
+            return res.status(500)
+        });
         var content;
         if (req.body.type === "video") {
             content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
@@ -150,18 +153,18 @@ exports.posts_get = async (req, res, next) => {
 
 exports.posts_getVote = async (req, res, next) => {
     Post.findById(req.params.postID).exec().then(post => {
-        Profile.findOne({ user: req.userData.userID }).then(profile => {
+        Profile.findOne({ user: req.userData.userID }).exec().then(profile => {
+            console.log();
             var vote;
             //Find if the user has voted
             for (var i = 0; i < post.votes.length; i++) {
-                if (post.votes[i].profileID.toString() == profile._id.toString()) {
+                if (post.votes[i].profileID === profile._id) {
                     vote = post.votes[i];
                     return res.status(200).json({
                         vote: vote.vote
                     })
                 }
             }
-
             //if not voted
             if (vote === undefined) {
                 return res.status(204).json({
@@ -170,14 +173,15 @@ exports.posts_getVote = async (req, res, next) => {
             }
 
         }).catch(err => {
+            console.log(err);
             return res.status(500).json({
-                error: err
+                error: "ERROR"
             });
         });
 
     }).catch(err => {
         return json.status(500).json({
-            error: err
+            error: "ERROR"
         });
     });
 }
@@ -189,7 +193,7 @@ exports.posts_vote = async (req, res, next) => {
 
             //Find if the user has voted
             for (var i = 0; i < post.votes.length; i++) {
-                if (post.votes[i].profileID.toString() == profile._id.toString()) {
+                if (post.votes[i].profileID === profile._id) {
                     vote = post.votes[i];
                     vote.vote = req.body.vote % 2;
                     post.votes[i] = vote;
@@ -207,6 +211,7 @@ exports.posts_vote = async (req, res, next) => {
             }
             var likes = 0;
             var dislikes = 0;
+
             //update post
             post.votes.filter((vote) => vote.vote != 0).map((vote, i) => {
                 if (vote.vote === 1) {
@@ -249,7 +254,7 @@ exports.posts_comment = async (req, res, next) => {
         });
         post.save().catch(err => {
             console.log(err);
-            res.status(500).json({ error: err })
+            res.status(500).json({ error: err });
         });
         return res.status(200).json({
             message: "OKAY"
@@ -263,35 +268,91 @@ exports.posts_comment = async (req, res, next) => {
 exports.posts_votePoll = async (req, res, next) => {
     try{
 
-        var profile = await Profile.findById(req.userData.userID);
-        var post = await Post.findById(req.body.postID);
-        var poll = await Poll.findById(post.content);
+        var profile = await Profile.findOne({user: req.userData.userID }).catch(err => { 
+            console.log(err);
+            return res.status(500)
+        });
+
+        var poll = await Poll.findById(req.body.pollID).catch(err => { 
+            console.log(err);
+            return res.status(500)
+        });
 
         //Find if the user has voted
-        var vote;
+
         poll.categories.map((category, i) => {
             category.votes = 0;
         });
 
-        for (var i = 0; i < poll.votes.length; i++) {
-            if (poll.votes[i].profileID.toString() == profile._id.toString()) {
-                vote = poll.votes[i];
-                vote.vote = req.body.vote % poll.categories.length;
-                poll.votes[i] = vote;
+        var voted = false;
+        poll.votes.map((vote, i) => {
+            if(profile._id.toString() === vote.profileID.toString()){
+                vote.category = req.body.category;
+                voted = true;
             }
-            vote = poll.votes[i];
-            poll.categories[poll.votes[i].vote] += 1;
+            poll.categories.map((category, i) => {
+                if(category.category === vote.category){
+                    category.votes += 1;
+                }
+            });
+        });
+
+        if(!voted){
+            var vote = {
+                category: req.body.category,
+                profileID: profile._id
+            };
+
+            poll.votes.push(vote);
+            poll.categories.map((category, i) => {
+                console.log(category === req.body.category);
+                if(category === req.body.category){
+                    category.votes += 1;
+                }
+            });
         }
 
+        console.log(poll);
         poll.markModified('votes');
         poll.markModified('categories');
 
-        var save = await poll.save();
+        var save = poll.save();
 
         return res.status(200).json({
             message: "OKAY"
         });
+
     } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+            message: "ERROR"
+        });
+    }
+}
+
+exports.posts_getVotePoll = async (req, res, next) => {
+    try{
+        var profile = await Profile.findOne({user: req.userData.userID}).catch(err => { 
+            console.log(err);
+            return res.status(500)
+        });
+        var poll = await Poll.findById(req.params.pollID).catch(err => { 
+            console.log(err);
+            return res.status(500)
+        });
+    
+        for (var i = 0; i < poll.votes.length; i++) {
+            if (poll.votes[i].profileID.toString() === profile._id.toString()) {
+                return res.status(200).json({
+                    voted: true
+                });
+            }
+        }
+        return res.status(200).json({
+            voted: false,
+            categories: poll.categories
+        });
+    }catch(error){
         return res.status(500).json({
             message: "ERROR"
         });
@@ -300,19 +361,22 @@ exports.posts_votePoll = async (req, res, next) => {
 
 exports.posts_getPoll = async (req, res, next) => {
     try{
-        var poll = await Poll.findById(req.params.pollID);
+        var poll = await Poll.findById(req.params.pollID).catch(err => { 
+            console.log(err);
+            return res.status(500)
+        });
         if(poll === null){
             return res.status(404).json({
                 message: "ERROR"
             });
         } 
-        console.log(poll.categories);
 
         var data = {
             values: poll.categories.map((category, i) => category.votes),
             labels: poll.categories.map((category, i) => category.category),
             type: 'pie'
-        }
+        };
+
         var datas = [];
         datas.push(data);
         return res.status(200).json({

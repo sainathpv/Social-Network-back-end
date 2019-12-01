@@ -11,6 +11,8 @@ router.post("/postComment", PostController.posts_comment);
 
 router.get("/postGetPoll/:pollID", PostController.posts_getPoll);
 
+router.get("/postGetPollVote/:pollID", check2Auth, PostController.posts_getVotePoll);
+
 router.post("/postVotePoll", check2Auth, PostController.posts_votePoll);
 
 router.post("/postvote", check2Auth, PostController.posts_vote);
