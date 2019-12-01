@@ -60,6 +60,9 @@ app.use('/events', events);
 const friends = require('./api/routes/friends');
 app.use('/friends', friends);
 
+const resetCritical = require('./api/routes/resetCritical');
+app.use('/resetCritical', resetCritical);
+
 app.use(flash());
 
 app.use((req, res, next) => {

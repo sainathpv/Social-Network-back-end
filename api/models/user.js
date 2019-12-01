@@ -22,6 +22,8 @@ const userSchema = mongoose.Schema({
   captcha: {type: Boolean, default: false},
   resetPswToken: { type: String },
   resetPswExpires: { type: Date },
+  resetEmailToken: {type: String},
+  resetEmailExpires: {type: Date},
   authorization: {type: Boolean, required: true}
 });
 
