@@ -158,7 +158,7 @@ exports.posts_getVote = async (req, res, next) => {
             var vote;
             //Find if the user has voted
             for (var i = 0; i < post.votes.length; i++) {
-                if (post.votes[i].profileID === profile._id) {
+                if (post.votes[i].profileID.toString() === profile._id.toString()) {
                     vote = post.votes[i];
                     return res.status(200).json({
                         vote: vote.vote
@@ -193,7 +193,7 @@ exports.posts_vote = async (req, res, next) => {
 
             //Find if the user has voted
             for (var i = 0; i < post.votes.length; i++) {
-                if (post.votes[i].profileID === profile._id) {
+                if (post.votes[i].profileID.toString() === profile._id.toString()) {
                     vote = post.votes[i];
                     vote.vote = req.body.vote % 2;
                     post.votes[i] = vote;
