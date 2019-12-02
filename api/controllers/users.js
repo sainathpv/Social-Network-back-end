@@ -1,6 +1,7 @@
 const User = require('../models/user');
 const Profile = require('../models/profile');
 const Friend = require('../models/friends');
+const Post = require("../models/post");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const speakEasy = require('speakeasy');
@@ -250,31 +251,79 @@ exports.users_login = async (req, res, next) => {
 }
 
 exports.users_delete = (req, res, next) => {
+    console.log("it works here");
     // remove the user according to userID (_id in mongodb)
-    User.remove({ _id: req.body.userID })
+    User.deleteOne({ _id: req.body.userID })
         .exec()
         .then(result => {
-            res.status(200).json({
-                message: "User deleted"
-            })
+            //res.status(200).json({
+            //    message: "User data deleted"
+            //})
         })
         .catch(err => {
             console.log(err);
-            res.status(500).json({ error: err })
+            return res.status(500).json({ 
+                error: err,
+                message: "Error occured when deleting user data"
+            })
         });
 
 
-    Profile.remove({ user: req.body.userID })
+    Profile.findOne({ user: req.body.userID })
+        .exec()
+        .then(function (profile) {
+            if (!profile) {
+                res.status(400).json({
+                    message: 'profile not found'
+                });
+            } else {
+                var profileID = profile._id;
+                return res.status(200).json({
+                    profile: profile,
+                })
+            }
+        }).catch(err => {
+            return res.status(500).json({
+                error: err,
+            })
+        });
+
+
+
+
+
+    //var profileID = profile._id;
+    //console.log("it works here")
+
+    /*Profile.remove({ user: req.body.userID })
         .exec()
         .then(result => {
-            res.status(200).json({
-                message: "Profile deleted"
-            })
+            //res.status(200).json({
+            //    message: "Profile data deleted"
+            //})
         })
         .catch(err => {
             console.log(err);
-            res.status(500).json({ error: err })
+            res.status(500).json({ 
+                error: err,
+                message: "Error occured when deleting Profile data",
+             })
         });
+    
+    Post.remove({profileID: profileID})
+    .exec()
+    .then(result => {
+    })
+    .catch(err =>{
+        console.log(err);
+        res.status(500).json({
+            error: err,
+            message: "Error occured when deleting Post data",
+        });
+    });
+    */
+    
+    
 
 }
 
