@@ -16,6 +16,7 @@ mongoose.connect(
 );
 
 mongoose.Promise = global.Promise;
+mongoose.set('useFindAndModify', false);
 
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({ extended: false }));

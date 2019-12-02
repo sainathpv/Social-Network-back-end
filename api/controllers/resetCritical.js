@@ -148,3 +148,38 @@ exports.send_email_val_vode = (req, res, next) => {
         });
     });
 }
+
+
+exports.reset_email = (req, res, next) => {
+
+    User.findOne({_id: req.userData.userID, resetEmailExpires: { $gt: Date.now() } }, function (err, user) {
+        if (!user) {
+            return res.status(401).json({
+                message: "User Validation Failed"
+            });
+        }
+        if(user.resetEmailToken === req.body.resetEmailToken){
+            user.email = req.body.email;
+            user.resetEmailToken = undefined;
+            user.resetEmailExpires = undefined;
+            user.captcha = true;
+            user.save()
+            .catch(err => {
+                console.log(err);
+                return res.status(500).json({
+                    message: "save is not successful",
+                    error: err
+                })
+            });
+            return res.status(200).json({
+                message: "Email reset successful"
+            });
+        }
+    }).catch(err => {
+        console.log(err);
+        return res.status(500).json({
+            message: "User not find or code expired, please try again",
+            error: err
+        })
+    });
+}
