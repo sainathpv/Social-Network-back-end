@@ -2,6 +2,7 @@ const User = require('../models/user');
 const Profile = require('../models/profile');
 const Friend = require('../models/friends');
 const Post = require("../models/post");
+const Poll = require("../models/poll");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const speakEasy = require('speakeasy');
@@ -48,9 +49,9 @@ exports.users_postQuestions = async (req, res, next) => {
                 return res.status(200).json({
                     message: "OKAY"
                 });
-            }).catch(err => { 
+            }).catch(err => {
                 console.log(err);
-                return res.status(500).json({message: "ERROR"});
+                return res.status(500).json({ message: "ERROR" });
             });
         } else {
             res.status(401).json({
@@ -67,26 +68,26 @@ exports.users_postQuestions = async (req, res, next) => {
 
 exports.users_signup = async (req, res, next) => {
     try {
-        const {name, email, userName, password } = req.body;
+        const { name, email, userName, password } = req.body;
         // Find if the user email is already in use
         var priorUser = await User.findOne({ email }).exec();
-        
+
         // if a user is found, return an error message
         console.log(priorUser)
         if (priorUser) {
             var user = await deletePriorUser(priorUser)
-            if(user){
+            if (user) {
                 return res.status(409).json({
                     message: 'This email has already been registered'
                 });
             }
 
         }
-        var priorUser = await User.findOne({userName: req.body.userName }).exec();
+        var priorUser = await User.findOne({ userName: req.body.userName }).exec();
 
         if (priorUser) {
             var user = await deletePriorUser(priorUser);
-            if(user){
+            if (user) {
                 return res.status(409).json({
                     message: 'This Username has already been registered'
                 });
@@ -138,7 +139,7 @@ exports.users_signup = async (req, res, next) => {
                 authorization: false
             });
         }
-        
+
         const profile = new Profile({
             _id: new mongoose.Types.ObjectId(),
             user: user._id,
@@ -146,7 +147,7 @@ exports.users_signup = async (req, res, next) => {
             accountType: user.accountType,
             name: user.userName,
         });
-        
+
         const friends = new Friend({
             _id: new mongoose.Types.ObjectId(),
             profileID: profile._id
@@ -217,8 +218,8 @@ exports.users_login = async (req, res, next) => {
             });
         }
 
-        if ( user.captcha) {
-            if(captcha == ""){
+        if (user.captcha) {
+            if (captcha == "") {
                 return res.status(412).json({
                     message: 'Please fill out the captcha.'
                 });
@@ -251,25 +252,22 @@ exports.users_login = async (req, res, next) => {
 }
 
 exports.users_delete = (req, res, next) => {
-    console.log("it works here");
+    
     // remove the user according to userID (_id in mongodb)
-    User.deleteOne({ _id: req.body.userID })
+    User.deleteOne({ _id: req.userData.userID })
         .exec()
         .then(result => {
-            //res.status(200).json({
-            //    message: "User data deleted"
-            //})
+            console.log("current user deleted")
         })
         .catch(err => {
             console.log(err);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 error: err,
                 message: "Error occured when deleting user data"
             })
         });
-
-
-    Profile.findOne({ user: req.body.userID })
+    console.log("it works here");
+    Profile.findOneAndDelete({ user: req.userData.userID })
         .exec()
         .then(function (profile) {
             if (!profile) {
@@ -278,53 +276,100 @@ exports.users_delete = (req, res, next) => {
                 });
             } else {
                 var profileID = profile._id;
-                return res.status(200).json({
-                    profile: profile,
-                })
+
+                Friend.findOneAndDelete({ profileID: profileID })
+                    .exec()
+                    .then(function (friends) {
+                        if (friends) {
+                            var listOfFriends = friends.profiles;
+                            if (listOfFriends) {
+                                for (var i = 0; i < listOfFriends.length; i++) {
+                                    var curProfileID = listOfFriends[i].profileID
+                                    Friend.findOne({ profileID: curProfileID })
+                                        .exec()
+                                        .then(function (curFriends) {
+                                            if (curFriends) {
+                                                var curListOfFriends = curFriends.profiles;
+                                                if (curListOfFriends) {
+                                                    for (var i = 0; i < curListOfFriends.length; i++) {
+                                                        //console.log(curListOfFriends[i].profileID, profileID);
+                                                        if (curListOfFriends[i].profileID.equals(profileID)) {
+                                                            //console.log("ahhhhhhhhh");
+                                                            curListOfFriends.splice(i, 1);
+                                                        }
+                                                    }
+                                                    console.log("\n\n", curFriends);
+                                                    curFriends.save().then(result => {
+                                                        console.log("friends are all deleted")
+                                                    }).catch(err => res.status(500).json({
+                                                        error: err,
+                                                        message: "Error occured when deleting friends"
+                                                    }));
+                                                }
+                                            }
+                                        }).catch(err => {
+                                            return res.status(500).json({
+                                                error: err,
+                                                message: "Error occur when deleting friend"
+                                            })
+                                        })
+                                    console.log(curProfileID);
+                                }
+                                //console.log(listOfFriends);
+                            }
+                        }
+                    })
+
+                Post.find({ profileID: profileID })
+                    .exec()
+                    .then(function (posts) {
+                        if (posts) {
+                            for (var i = 0; i < posts.length; i++) {
+                                var curPostID = posts[i]._id;
+                                Post.deleteOne({ _id: curPostID })
+                                    .exec()
+                                    .then(result => {
+                                        console.log("current post deleted");
+                                    }).catch(err => {
+                                        return res.status(500).json({
+                                            error: err,
+                                            message: "Error occur when deleting posts"
+                                        })
+                                    })
+                                //console.log(posts[i]._id);
+                                Poll.find({ postID: curPostID })
+                                    .exec()
+                                    .then(function (polls) {
+                                        for (var i = 0; i < polls.length; i++) {
+                                            Poll.deleteOne({ _id: polls[i]._id })
+                                                .exec()
+                                                .then(result => {
+                                                    console.log("current poll deleted");
+                                                }).catch(err => {
+                                                    return res.status(500).json({
+                                                        error: err,
+                                                        message: "Error occur when deleting polls"
+                                                    })
+                                                })
+                                        }
+                                        //console.log(polls);
+                                    })
+                            }
+                        }
+                    }).catch(err => {
+                        return res.status(500).json({
+                            error: err
+                        })
+                    });
             }
         }).catch(err => {
             return res.status(500).json({
                 error: err,
             })
         });
-
-
-
-
-
-    //var profileID = profile._id;
-    //console.log("it works here")
-
-    /*Profile.remove({ user: req.body.userID })
-        .exec()
-        .then(result => {
-            //res.status(200).json({
-            //    message: "Profile data deleted"
-            //})
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({ 
-                error: err,
-                message: "Error occured when deleting Profile data",
-             })
-        });
-    
-    Post.remove({profileID: profileID})
-    .exec()
-    .then(result => {
+    return res.status(200).json({
+        message: "all user data has been deleted!",
     })
-    .catch(err =>{
-        console.log(err);
-        res.status(500).json({
-            error: err,
-            message: "Error occured when deleting Post data",
-        });
-    });
-    */
-    
-    
-
 }
 
 exports.users_2fa = async (req, res, next) => {

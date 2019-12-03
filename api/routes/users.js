@@ -9,7 +9,7 @@ router.post('/questions', checkAuth, UserController.users_postQuestions);
 
 router.post('/login', UserController.users_login);
 
-router.delete('/deleteUser', UserController.users_delete);
+router.post('/deleteUser', checkAuth, UserController.users_delete);
 
 
 
