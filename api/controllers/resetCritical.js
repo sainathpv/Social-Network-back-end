@@ -10,8 +10,7 @@ const bcrypt = require("bcrypt");
 
 
 exports.confirm_psw = (req, res, next) => {
-    console.log(req.body.password);
-    console.log(req.userData.userID);
+
     User.findOne({ _id: req.userData.userID }, function (err, user) {
         if (err){
             console.log(err);
@@ -86,7 +85,6 @@ exports.send_email_val_vode = (req, res, next) => {
                             message: "User Validation Failed!"
                         });
                     }
-                    console.log(user.email, req.body.email);
                     if (user.email != req.body.email){
                         return res.status(401).json({
                             message: "Current Email invalid!",

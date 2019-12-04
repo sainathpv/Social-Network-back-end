@@ -16,7 +16,7 @@ async function deletePriorUser(user) {
         User.deleteOne({ _id: user._id })
             .exec()
             .then(result => {
-                console.log(result);
+
             })
             .catch(err => {
                 console.log(err);
@@ -25,7 +25,6 @@ async function deletePriorUser(user) {
         Profile.deleteOne({ user: user._id })
             .exec()
             .then(result => {
-                console.log(result);
                 return false;
             })
             .catch(err => {
@@ -38,7 +37,7 @@ exports.users_postQuestions = async (req, res, next) => {
     try {
         var user = await User.findById(req.userData.userid).exec();
         if (user.questions.length === 0) {
-            console.log(user.questions);
+
             var questions = req.body.questions;
             for (var i = 0; i < 3; i++) {
                 const salt = bcrypt.genSaltSync(10);
@@ -73,7 +72,6 @@ exports.users_signup = async (req, res, next) => {
         var priorUser = await User.findOne({ email }).exec();
 
         // if a user is found, return an error message
-        console.log(priorUser)
         if (priorUser) {
             var user = await deletePriorUser(priorUser)
             if (user) {
@@ -95,7 +93,6 @@ exports.users_signup = async (req, res, next) => {
         }
 
         if (password.length <= 8) {
-            console.log(req.body);
             return res.status(409).json({
                 message: 'Password needs to have at least 8 characters'
             });
@@ -127,7 +124,6 @@ exports.users_signup = async (req, res, next) => {
                 twoFASecret: secret.base32,
                 authorization: false
             });
-            console.log(user);
         } else {
             user = new User({
                 _id: new mongoose.Types.ObjectId(),

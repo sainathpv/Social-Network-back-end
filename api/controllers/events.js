@@ -18,6 +18,8 @@ exports.events_create = async (req, res, next) => {
             profileID: profile._id,
             content: content,
             time: req.body.time,
+            type: req.body.type,
+            location: req.body.location,
             company: profile.name,
             eventName: req.body.eventName,
             date: req.body.date
@@ -41,33 +43,63 @@ exports.events_get = async (req, res, next) => {
     try {
         var events = await Event.find({}).exec();
         var result = [];
-        var now = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
         for(var i = 0; i < events.length; i++){
-            if(events[i].data < now){
-                result.push({
-                    eventID: event._id,
-                    company: events[i].company,
-                    date: event.date,
-                    time: event.time,
-                    location: event.location,
-                    type: event.type,
-                    profileID: event.profileID,
-                    content: event.content,
-                    going: event.going.length,
-                    eventName: event.eventName
-                });
-            }else{
-                var deleting = await Event.findByIdAndRemove(events[i]._id);
-            }
+            result.push({
+                eventID: events[i]._id,
+                company: events[i].company,
+                date: events[i].date.getMonth() + "/" + events[i].date.getDate() + "/" + events[i].date.getFullYear(),
+                time: events[i].time,
+                location: events[i].location,
+                type: events[i].type,
+                profileID: events[i].profileID,
+                content: events[i].content,
+                going: events[i].going.length,
+                eventName: events[i].eventName
+            });
         }
 
         return res.status(200).json({
             events: result
         });
+
     } catch (error) {
-        console.error("ERROR " + error.message);
+        console.error(error);
         return res.status(500).json({
             message: 'Server error'
+        });
+    }
+}
+
+exports.events_getUser = async (req, res, next) => {
+    try{
+        var profile = await Profile.findOne({user: req.userData.userID});
+        var events = await Event.find({}).exec();
+    
+        var result = [];
+        for(var i = 0; i < events.length; i++){
+            if(events[i].going.includes(profile._id.toString)){
+                var time = events[i].time.split(":");
+                result.push({
+                    eventID: events[i]._id,
+                    company: events[i].company,
+                    date: events[i].date.getMonth() + "/" + events[i].date.getDate() + "/" + events[i].date.getFullYear(),
+                    time: time[0] % 13 === 0 ? 1 + ":" + time[1] : time[0] % 13 + ":" + time[1],
+                    location: events[i].location,
+                    type: events[i].type,
+                    profileID: events[i].profileID,
+                    content: events[i].content,
+                    going: events[i].going.length,
+                    eventName: events[i].eventName
+                });
+            }
+        }
+        res.status(200).json({
+            events: result
+        });
+    }catch(error){
+        console.log(error);
+        res.status(500).json({
+            message: "ERROR"
         });
     }
 }

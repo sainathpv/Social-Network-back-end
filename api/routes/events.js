@@ -16,7 +16,9 @@ body{
 */
 router.post('/create', check2Auth, EventsController.events_create);
 
-router.get('/', check2Auth, EventsController.events_get);
+router.get('/getUserEvents', check2Auth, EventsController.events_getUser);
+
+router.get('/', EventsController.events_get);
 
 router.post('/edit', check2Auth, EventsController.events_edit);
 

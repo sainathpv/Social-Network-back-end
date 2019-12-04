@@ -94,7 +94,6 @@ exports.posts_post = async (req, res, next) => {
             });
         }
     }catch(error){
-        console.log(error);
         res.status(500).json({
             message: "ERROR"
         });
@@ -154,7 +153,6 @@ exports.posts_get = async (req, res, next) => {
 exports.posts_getVote = async (req, res, next) => {
     Post.findById(req.params.postID).exec().then(post => {
         Profile.findOne({ user: req.userData.userID }).exec().then(profile => {
-            console.log();
             var vote;
             //Find if the user has voted
             for (var i = 0; i < post.votes.length; i++) {
@@ -225,7 +223,6 @@ exports.posts_vote = async (req, res, next) => {
             post.numLikes = likes;
             post.markModified('votes');
             post.save().then(result => {
-                console.log(result);
                 return res.status(200).json({
                     numDislikes: dislikes,
                     numLikes: likes
@@ -305,14 +302,12 @@ exports.posts_votePoll = async (req, res, next) => {
 
             poll.votes.push(vote);
             poll.categories.map((category, i) => {
-                console.log(category === req.body.category);
                 if(category === req.body.category){
                     category.votes += 1;
                 }
             });
         }
 
-        console.log(poll);
         poll.markModified('votes');
         poll.markModified('categories');
 

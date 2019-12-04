@@ -4,22 +4,12 @@ const fs = require('fs');
 
 //copied from images.js
 function saveImageToDisk(localPath, image) {
-  //console.log("it works here in image too")
   var buf = new Buffer(image, 'base64');
-  `console.log("it works here in image after buff")
-  fs.access("./staticAssets/images/image_1574074955286.jpg", error => {
-    if (!error) {
-        console.log("it works")
-    } else {
-        console.log("it does not")
-    }
-  });`
 
   fs.writeFile( "./staticAssets/images/" + localPath, buf, error =>{
     console.log(error)
   });
   
-  //console.log("it works here in image after saving")
 }
 
 exports.profile_image_upload = (req, res, next) => {
@@ -169,10 +159,7 @@ exports.profile_get = async (req, res, next) => {
       }
   
       const { name } = req.userData;
-
-      console.log(user)
   
-      //const { _id, ...profileData } = profile;
       return res.status(200).json({
         name,
         trueName: user.trueName, 
