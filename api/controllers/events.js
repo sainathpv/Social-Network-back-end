@@ -1,89 +1,68 @@
 const Event = require('../models/event');
 const Profile = require('../models/profile');
-
-exports.events_create = (req, res, next) => {
-    var content; 
-    if(req.body.type === "image"){
-        //Need help with this
-    }else if(req.body.type === "video"){
-        content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
-    }else{
-        content = req.body.content;
-    }
-
-    Profile.findOne({user: req.userData.userID}).exec().then(profile => {
+const mongoose = require('mongoose');
+exports.events_create = async (req, res, next) => {
+    try{
+        var content; 
+        if(req.body.type === "image"){
+            //Need help with this
+        }else if(req.body.type === "video"){
+            content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
+        }else{
+            content = req.body.content;
+        }
+    
+        var profile = await Profile.findOne({user: req.userData.userID}).exec();
         const event = new Event({
             _id: new mongoose.Types.ObjectId(),
-            profileID: req.body.profileID,
-            comments: [],
-            numLikes: 0,
-            numDislikes: 0,
+            profileID: profile._id,
             content: content,
-            tags: [req.body.tag],
+            time: req.body.time,
             company: profile.name,
             eventName: req.body.eventName,
-            date: req.body.date,
+            date: req.body.date
         });
         profile.events.push(event._id);
-        event.save().then(result => {
-            profile.save().then(result => {
-                res.status(200).json({
-                    message: "OKAY"
-                });
-            }).catch(err => res.status(500).json({error: err}));
-        }).catch(err => res.status(500).json({error: err}));
-    }).catch(err => res.status(500).json({error: err}));
-
-    event.save().then(result => {
+        var save1 = await event.save();
+        var save2 = await profile.save();
         return res.status(200).json({
             message: "Event created"
         });
-    });
+    }catch(err){
+        console.log(err);
+        res.status(500).json({
+            message: "ERROR"
+        });
+    }
 }
 
 //external get
 exports.events_get = async (req, res, next) => {
     try {
-        var events = [];
-        var eventIDs = JSON.parse(req.query.eventIDs);
-
-        for(var i = 0; i < eventIDs.length; i++){
-            var event = Event.findById(eventIDs[i]).exec();
-            if(event != null){
-                var now = new Date();
-                //the date hasn't past
-                if(event.date < now){
-                    var eventOBJ = {
-                        date: event.date,
-                        company: event.company,
-                        eventName: event.eventName,
-                        location: event.location
-                    }
-                    events.push(eventOBJ);
-                }else{
-                    var id = eventIDs[i];
-                    var event = await Event.findByIdAndRemove(id).exec();
-                    var user = await Profile.findOne({user: req.userData.userID}).exec();
-
-                    for(var j = 0; j < user.events.length; j++){
-                        if(event._id.toString() === user.events[j].toString()){
-                            user = user.events.splice(j, 1);
-                            user.markModified('events');
-                            user.save();
-                            break;
-                        }
-                    }
-
-                }
-            }else{
-                return res.status(410).json({
-                    message: "GONE"
+        var events = await Event.find({}).exec();
+        var result = [];
+        var now = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+        for(var i = 0; i < events.length; i++){
+            if(events[i].data < now){
+                result.push({
+                    eventID: event._id,
+                    company: events[i].company,
+                    date: event.date,
+                    time: event.time,
+                    location: event.location,
+                    type: event.type,
+                    profileID: event.profileID,
+                    content: event.content,
+                    going: event.going.length,
+                    eventName: event.eventName
                 });
+            }else{
+                var deleting = await Event.findByIdAndRemove(events[i]._id);
             }
         }
 
         return res.status(200).json({
-            events: events
+            events: result
         });
     } catch (error) {
         console.error("ERROR " + error.message);
