@@ -155,11 +155,15 @@ exports.users_signup = async (req, res, next) => {
             profileID: profile._id
         });
 
+        console.log("it works here");
+
         profile.friends = friends._id;
-        var chatUser = await chatkit.createUser({
+        /*var chatUser = await chatkit.createUser({
             id: user.userName,
             name: user.userName
         });
+        */
+        console.log("it works here, too");
 
         const data_url = await qrcode.toDataURL(secret.otpauth_url);
         //Asynchronously save the user to the database

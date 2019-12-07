@@ -14,7 +14,7 @@ const ProfileSchema = mongoose.Schema({
     default: '/assets/images/profiles/default.jpg'
   }, //This is the image name of the user profile image. The actual image is stored in the profileImg
   
-  name: {type: String, require: true},
+  name: {type: String, require: true, public: true,},
   major: {type: String, default: "" }, 
   studentType: {type: String, default: "" },
   year: {type: String, default: "" }, 
@@ -27,6 +27,14 @@ const ProfileSchema = mongoose.Schema({
   settings: {type: Object, default: {
     darkmode: false,
     postsSeenOnlyByFriends: false
+  }},
+  hided: {type: Object, default: {
+    trueName: false,
+    name: false,
+    major: false, 
+    studentType: false, 
+    year: false, 
+    interests: false, 
   }}
 });
 
