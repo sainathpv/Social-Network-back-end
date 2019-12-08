@@ -120,33 +120,24 @@ exports.users_signup = async (req, res, next) => {
         // create a new user with the input information and hashed passsword
         var user;
 
-        if (req.body.accountType == "student") {
-            user = new User({
-                _id: new mongoose.Types.ObjectId(),
-                name: name,
-                userName: userName,
-                email: email,
-                password: pwdHash,
-                twoFASecret: secret.base32,
-                authorization: false
-            });
-        } else {
-            user = new User({
-                _id: new mongoose.Types.ObjectId(),
-                company: company,
-                userName: req.body.userName,
-                email: email,
-                password: pwdHash,
-                twoFASecret: secret.base32,
-                authorization: false
-            });
-        }
+        user = new User({
+            _id: new mongoose.Types.ObjectId(),
+            trueName: name,
+            userName: userName,
+            email: email,
+            password: pwdHash,
+            twoFASecret: secret.base32,
+            authorization: false
+        });
+
+        console.log(req.body);
+
 
         const profile = new Profile({
             _id: new mongoose.Types.ObjectId(),
             user: user._id,
             interests: ["questions"],
-            accountType: user.accountType,
+            accountType: req.body.accountType,
             name: user.userName,
         });
 
