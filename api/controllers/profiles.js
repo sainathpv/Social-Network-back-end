@@ -62,7 +62,9 @@ exports.profile_edit = async (req, res, next) => {
     try {
       const profileUpdate = {};
       const userUpdate = {};
-      const { trueName, bio, name, major, studentYear, studentType} = req.body;
+      const { trueName, bio, name, major, studentYear, studentType, hided} = req.body;
+
+      if (hided) profileUpdate.hided = hided;
       if (bio) profileUpdate.bio = bio;
       if (name) {
         profileUpdate.name = name;
