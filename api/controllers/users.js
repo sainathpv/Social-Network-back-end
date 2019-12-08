@@ -8,7 +8,6 @@ const jwt = require('jsonwebtoken');
 const speakEasy = require('speakeasy');
 const qrcode = require('qrcode');
 const mongoose = require('mongoose');
-const Chatkit = require('pusher-chatkit-server');
 
 async function deletePriorUser(user) {
     if (user.authorization) {
@@ -65,11 +64,6 @@ exports.users_postQuestions = async (req, res, next) => {
         });
     }
 }
-
-const chatkit = new Chatkit.default({
-    instanceLocator: "v1:us1:5a64b818-5ec9-4f14-b3dc-c14a1fb11ff4",
-    key: "282d3cd3-acbf-4371-9951-33042b09fa60:JpaalLQk3ugZrCA+Fye54oVcxSFQG3+rKQsXaLqI/zM="
-});
 
 exports.users_signup = async (req, res, next) => {
     try {
@@ -156,46 +150,29 @@ exports.users_signup = async (req, res, next) => {
         });
 
         profile.friends = friends._id;
-        var chatUser = await chatkit.createUser({
-            id: user.userName,
-            name: user.userName
-        });
 
         const data_url = await qrcode.toDataURL(secret.otpauth_url);
         //Asynchronously save the user to the database
-        user.save().then(result => {
-            profile.save().then(result => {
-                friends.save().then(result => {
-                    //generate a jwt token before proceeding to 2FA auth
-                    const token = jwt.sign(
-                        {
-                            userid: user._id,
-                            email: email,
-                            twofactor: false
-                        },
-                        process.env.JWT_KEY,
-                        {
-                            expiresIn: '7d'
-                        }
-                    );
-                    // then return the qrcode for user to scan, Ben should be able to convert the data_url to a image in front end
+        var save = await user.save();
+        var save2 = await profile.save();
+        var save3 = await friends.save();
+        //generate a jwt token before proceeding to 2FA auth
+        const token = jwt.sign(
+            {
+                userid: user._id,
+                email: email,
+                twofactor: false
+            },
+            process.env.JWT_KEY,
+            {
+                expiresIn: '7d'
+            }
+        );
 
-
-                    return res.status(200).json({
-                        data_url,
-                        token
-                    });
-                });
-            });
-        }).catch(err => {
-            console.log(err);
-            return res.status(409).json({
-                message: 'Your email format is not valid'
-            });
+        return res.status(200).json({
+            data_url,
+            token
         });
-
-
-
     } catch (err) {
         console.log(err);
         res.status(500).json({ error: err });

@@ -3,6 +3,10 @@ const router = express.Router();
 const ChatsController = require('../controllers/chats');
 const check2Auth = require('../middleware/check-2auth');
 
-router.post('/chat_auth', check2Auth, ChatsController.chat_auth);
+router.post('/sendMessage', check2Auth, ChatsController.chats_sendMessage);
+
+router.post('/create', check2Auth, ChatsController.chats_createRoom);
+
+router.get('/', check2Auth, ChatsController.chats_getRooms);
 
 module.exports = router;
