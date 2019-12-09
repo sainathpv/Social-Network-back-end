@@ -3,9 +3,6 @@ const jwt = require('jsonwebtoken');
 module.exports = (req, res, next) => {
   try {
     const jwtToken = req.headers.authorization.split(' ')[1];
-    //console.log(jwtToken);
-    //console.log(process.env.JWT_KEY);
-    //console.log(jwtToken);
     const decoded = jwt.verify(jwtToken, process.env.JWT_KEY);
 
     if (decoded.twoFactor) {

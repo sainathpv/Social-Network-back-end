@@ -267,16 +267,15 @@ exports.posts_votePoll = async (req, res, next) => {
 
         var profile = await Profile.findOne({user: req.userData.userID }).catch(err => { 
             console.log(err);
-            return res.status(500)
+            return res.status(500);
         });
 
         var poll = await Poll.findById(req.body.pollID).catch(err => { 
             console.log(err);
-            return res.status(500)
+            return res.status(500);
         });
 
         //Find if the user has voted
-
         poll.categories.map((category, i) => {
             category.votes = 0;
         });
@@ -302,7 +301,7 @@ exports.posts_votePoll = async (req, res, next) => {
 
             poll.votes.push(vote);
             poll.categories.map((category, i) => {
-                if(category === req.body.category){
+                if(category.category === req.body.category){
                     category.votes += 1;
                 }
             });
