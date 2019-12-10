@@ -252,7 +252,6 @@ exports.users_delete = (req, res, next) => {
                 });
             } else {
                 var profileID = profile._id;
-
                 Friend.findOneAndDelete({ profileID: profileID })
                     .exec()
                     .then(function (friends) {

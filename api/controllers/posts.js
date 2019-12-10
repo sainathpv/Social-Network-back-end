@@ -338,7 +338,8 @@ exports.posts_getVotePoll = async (req, res, next) => {
         for (var i = 0; i < poll.votes.length; i++) {
             if (poll.votes[i].profileID.toString() === profile._id.toString()) {
                 return res.status(200).json({
-                    voted: true
+                    voted: true,
+                    categories: poll.categories
                 });
             }
         }

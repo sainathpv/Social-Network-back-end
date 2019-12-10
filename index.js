@@ -124,6 +124,10 @@ app.use('/friends', friends);
 const resetCritical = require('./api/routes/resetCritical');
 app.use('/resetCritical', resetCritical);
 
+const searchRoutes = require('./api/routes/searchPosts');
+app.use('/search', searchRoutes);
+
+
 app.use(flash());
 
 app.use((req, res, next) => {

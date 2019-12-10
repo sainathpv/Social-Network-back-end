@@ -11,5 +11,6 @@ router.post('/editprofile_interest', check2Auth, ProfileController.profile_inter
 
 router.post('/editProfileImage', check2Auth, ProfileController.profile_image_upload);
 
+router.post('/miniProfile', ProfileController.profile_get_mini);
 
 module.exports = router;

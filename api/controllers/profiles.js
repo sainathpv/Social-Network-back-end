@@ -174,3 +174,71 @@ exports.profile_get = async (req, res, next) => {
       });
     }
 }
+
+exports.profile_get_mini = async (req, res, next) => {
+  try {
+    const profile = await Profile.findOne(
+      {
+        _id: req.body.profileID
+      }
+    ).exec();
+    
+    if (!profile) {
+      return res.status(400).json({
+        message: 'profile not found'
+      });
+    }
+
+    const user = await User.findOne(
+      {
+        _id: profile.user
+      }
+    ).exec();
+
+    if (!user) {
+      return res.status(400).json({
+        message: 'user not found'
+      });
+    }
+
+    const result = {
+      bio: profile.bio, 
+      name: profile.name,
+      profileImageUrl: profile.profileImageUrl,
+      trueName:'No',
+      major:'No',
+      studentType:'No',
+      year:'No',
+      interests:'No',
+    };
+
+    if(!profile.hided.trueName){
+      result.trueName = user.trueName;
+    }
+
+    if(!profile.hided.major){
+      result.major = profile.major;
+    }
+
+    if(!profile.hided.studentType){
+      result.studentType = profile.studentType;
+    }
+
+    if(!profile.hided.year){
+      result.year = profile.year;
+    }
+
+    if(!profile.hided.interests){
+      result.interests = profile.interests;
+    }
+
+    return res.status(200).json({
+      result
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({
+      message: 'Server error'
+    });
+  }
+}

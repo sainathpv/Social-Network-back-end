@@ -125,16 +125,26 @@ exports.events_edit = (req, res, next) => {
 }
 
 exports.events_going = (req, res, next) =>{
-   
+    console.log(req.body.eventID);
     Event.findById(req.body.eventID).exec().then( event => {
         Profile.findOne({user: req.userData.userID}).exec().then(profile => {
-            event.going.includes(profile.profileID);
-            event.going.push(profile.profileID);
-            event.save().then(result => {
-                res.status(200).json({
-                    message: "OKAY"
+            if(!event.going.includes(profile.profileID)){
+                event.going.push(profile.profileID);
+                event.markModified('going');
+                return event.save().then(result => {
+                    res.status(200).json({
+                        event: event
+                    });
                 });
-            });
+            }else{
+                event.going.splice(event.going.indexOf(profile.profileID), 1);
+                event.markModified('going');
+                return event.save().then(result => {
+                    res.status(200).json({
+                        event: event
+                    });
+                });
+            }
         });
 
     }).catch(err => {
@@ -150,7 +160,7 @@ exports.events_delete = (req, res, next) => {
             event.remove();
             return res.status(200).json({message: "OKAY"});
         }else{
-            return res.status(409).json({message: "UNAUTHORIZED"});
+            return res.status(401).json({message: "UNAUTHORIZED"});
         }
     });
     }).catch(err => {
