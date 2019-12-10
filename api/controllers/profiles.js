@@ -62,7 +62,7 @@ exports.profile_edit = async (req, res, next) => {
     try {
       const profileUpdate = {};
       const userUpdate = {};
-      const { trueName, bio, name, major, studentYear, studentType, hided} = req.body;
+      const { trueName, bio, name, major, studentYear, studentType, hided, settings} = req.body;
 
       if (hided) profileUpdate.hided = hided;
       if (bio) profileUpdate.bio = bio;
@@ -70,6 +70,8 @@ exports.profile_edit = async (req, res, next) => {
         profileUpdate.name = name;
         userUpdate.userName = name;
       }
+      
+      profileUpdate.settings = settings;
       profileUpdate.studentType = studentType;
       profileUpdate.year = studentYear;
 

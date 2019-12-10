@@ -26,7 +26,8 @@ const ProfileSchema = mongoose.Schema({
   chats: {type: Array, default: []}, //Array of chatIDs
   settings: {type: Object, default: {
     darkmode: false,
-    postsSeenOnlyByFriends: false
+    postsSeenOnlyByFriends: false,
+    censor: false
   }},
   hided: {type: Object, default: {
     trueName: false,
