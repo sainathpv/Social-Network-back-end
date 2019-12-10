@@ -205,6 +205,11 @@ exports.profile_get_mini = async (req, res, next) => {
       bio: profile.bio, 
       name: profile.name,
       profileImageUrl: profile.profileImageUrl,
+      trueName:'No',
+      major:'No',
+      studentType:'No',
+      year:'No',
+      interests:'No',
     };
 
     if(!profile.hided.trueName){
