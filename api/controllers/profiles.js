@@ -202,6 +202,7 @@ exports.profile_get_mini = async (req, res, next) => {
     }
 
     const result = {
+      accountType: profile.accountType,
       bio: profile.bio, 
       name: profile.name,
       profileImageUrl: profile.profileImageUrl,
