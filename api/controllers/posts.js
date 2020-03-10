@@ -11,9 +11,7 @@ exports.posts_post = async (req, res, next) => {
             return res.status(500)
         });
         var content;
-        if (req.body.type === "video") {
-            content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
-        }else if (req.body.type === "post"){
+        if (req.body.type === "post"){
 
             var share = await Post.findById(req.body.content).exec();
             if (share === null) {
@@ -63,6 +61,8 @@ exports.posts_post = async (req, res, next) => {
                     postID: ""
                 });
                 content = poll._id;
+            }else if(req.body.type === "video"){
+                content = "https://www.youtube.com/embed/" + req.body.content.split("=")[1];
             }else{
                 content = req.body.content;
             }
@@ -79,7 +79,7 @@ exports.posts_post = async (req, res, next) => {
                 type: req.body.type,
                 content: content
             });
-
+            
             if(req.body.type === "poll"){
                 poll.postID = post._id;
                 var save = await poll.save();
@@ -154,32 +154,35 @@ exports.posts_getVote = async (req, res, next) => {
     Post.findById(req.params.postID).exec().then(post => {
         Profile.findOne({ user: req.userData.userID }).exec().then(profile => {
             var vote;
+
             //Find if the user has voted
             for (var i = 0; i < post.votes.length; i++) {
                 if (post.votes[i].profileID.toString() === profile._id.toString()) {
                     vote = post.votes[i];
+                    console.log("Vote")
+                    console.log(vote.vote)
                     return res.status(200).json({
-                        vote: vote.vote
+                        vote: vote.vote.toString()
                     })
                 }
             }
             //if not voted
-            if (vote === undefined) {
-                return res.status(204).json({
-                    vote: 0
-                });
-            }
+            console.log("NO VOTE")
+            console.log(vote)
+            return res.status(200).json({
+                vote: '0'
+            });
 
         }).catch(err => {
             console.log(err);
-            return res.status(500).json({
-                error: "ERROR"
+            return res.status(204).json({
+                vote: '0'
             });
         });
 
     }).catch(err => {
-        return json.status(500).json({
-            error: "ERROR"
+        return res.status(204).json({
+            vote: '0'
         });
     });
 }
