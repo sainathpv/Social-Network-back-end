@@ -14,7 +14,7 @@
     "bcrypt": "^3.0.6",
     "body-parser": "^1.19.0",
     "connect-flash": "^0.1.1",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "fs": "0.0.1-security",
     "jsonwebtoken": "^8.5.1",
     "kill-port": "^1.6.0",
